@@ -12,16 +12,60 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
+        default_batch_fetch_size: 100
     open-in-view: false
+
+  flyway:
+    # [Flyway 활성화 여부]
+    # 애플리케이션 시작 시 DB 마이그레이션 스크립트(V1__..., V2__...)를 자동 실행하도록 설정
+    enabled: true
+    # [마이그레이션 SQL 스크립트 위치]
+    # 리소스(classpath) 내에서 실행할 SQL 파일들의 위치 경로 지정
+    locations:
+      - classpath:db/migration/schema
+      - classpath:db/migration/data
+      - classpath:db/migration/dummy
+    # [기존 DB 기준선(Baseline) 자동 생성]
+    # Flyway 적용 전 이미 데이터/테이블이 존재하는 기존 DB에 연결할 때,
+    # flyway_schema_history 테이블이 없더라도 에러 없이 해당 시점을 기준점(V1)으로 기록하고 이후 스크립트 적용
+    baseline-on-migrate: true
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    consumer:
+      enable-auto-commit: false
+
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+
+        spring.json.trusted.packages: com.chapchap.delivery.global.kafka.event
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent
+
+    listener:
+      ack-mode: record
+
+kafka:
+  topic:
+    subscription-delivery-orders: subscription.delivery-orders.v1
+
+  consumer-group:
+    subscription-delivery-orders: delivery-service-order-group
+
+  retry:
+    interval-ms: 1000
+    max-retries: 3
 
 springdoc:
   api-docs:
@@ -32,3 +76,7 @@ management:
     web:
       exposure:
         include: health
+
+security:
+  personal-data:
+    encryption-key: ${PERSONAL_DATA_ENCRYPTION_KEY}
