@@ -12,23 +12,66 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
+        default_batch_fetch_size: 100
     open-in-view: false
+
+  flyway:
+    # 애플리케이션 시작 시 Flyway 마이그레이션 실행
+    enabled: true
+
+    # 마이그레이션 SQL 위치
+    locations:
+      - classpath:db/migration/schema
+      - classpath:db/migration/data
+      - classpath:db/migration/dummy
+
+    # 기존 데이터가 존재하는 DB에도 baseline을 생성한 뒤
+    # 이후 마이그레이션을 적용할 수 있도록 설정
+    baseline-on-migrate: true
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 
-springdoc:
-  api-docs:
-    path: /api-docs
+    consumer:
+      enable-auto-commit: false
+
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+
+        spring.json.trusted.packages: com.chapchap.delivery.global.kafka.event
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent
+
+    listener:
+      ack-mode: record
+
+kafka:
+  topic:
+    subscription-delivery-orders: subscription.delivery-orders.v1
+
+  consumer-group:
+    subscription-delivery-orders: delivery-service-order-group
+
+  retry:
+    interval-ms: 1000
+    max-retries: 3
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+
+security:
+  personal-data:
+    encryption-key: ${PERSONAL_DATA_ENCRYPTION_KEY}
