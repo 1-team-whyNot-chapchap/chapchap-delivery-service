@@ -98,7 +98,7 @@ public class DeliveryRegistrationService {
             );
 
         SubscriptionDeliveryOrderReadyEvent.MenuItem menuItem =
-            data.menuItems().get(0);
+            data.menuItems().getFirst();
 
         Delivery delivery = createDelivery(
             event

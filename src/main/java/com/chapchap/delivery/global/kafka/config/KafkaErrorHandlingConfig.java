@@ -24,8 +24,8 @@ import java.util.Map;
 
 @Configuration
 public class KafkaErrorHandlingConfig {
-
     @Bean
+    @SuppressWarnings("resource")
     public ProducerFactory<String, Object> kafkaProducerFactory(
         KafkaProperties kafkaProperties
     ) {
@@ -39,7 +39,7 @@ public class KafkaErrorHandlingConfig {
 
         serializers.put(
             Object.class
-            , new JacksonJsonSerializer<Object>()
+            , new JacksonJsonSerializer<>()
                 .noTypeInfo()
         );
 

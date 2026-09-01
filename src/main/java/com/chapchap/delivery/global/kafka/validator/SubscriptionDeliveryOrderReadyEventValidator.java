@@ -4,6 +4,7 @@ import com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEv
 import com.chapchap.delivery.global.kafka.exception.InvalidSubscriptionDeliveryOrderEventException;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -61,7 +62,7 @@ public class SubscriptionDeliveryOrderReadyEventValidator {
         }
 
         requireNotBlank(event.eventId(), "eventId");
-        validateUuid(event.eventId(), "eventId");
+        validateEventId(event.eventId());
 
         if (event.occurredAt() == null) {
             throw invalid("occurredAt");
@@ -82,8 +83,7 @@ public class SubscriptionDeliveryOrderReadyEventValidator {
     ) {
         requireNotBlank(data.orderId(), "orderId");
 
-        if (messageKey == null
-            || !data.orderId().equals(messageKey)) {
+        if (!Objects.equals(data.orderId(), messageKey)) {
             throw invalid("messageKey");
         }
 
@@ -146,7 +146,7 @@ public class SubscriptionDeliveryOrderReadyEventValidator {
         }
 
         SubscriptionDeliveryOrderReadyEvent.MenuItem menuItem =
-            data.menuItems().get(0);
+            data.menuItems().getFirst();
 
         if (menuItem == null) {
             throw invalid("menuItems[0]");
@@ -183,11 +183,11 @@ public class SubscriptionDeliveryOrderReadyEventValidator {
         }
     }
 
-    private void validateUuid(String value, String fieldName) {
+    private void validateEventId(String eventId) {
         try {
-            UUID.fromString(value);
+            UUID.fromString(eventId);
         } catch (IllegalArgumentException exception) {
-            throw invalid(fieldName);
+            throw invalid("eventId");
         }
     }
 

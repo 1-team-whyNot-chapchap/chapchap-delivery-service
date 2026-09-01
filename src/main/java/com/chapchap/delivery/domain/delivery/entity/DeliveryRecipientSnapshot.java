@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DeliveryRecipientSnapshot {
-
     @Id
     @Column(name = "delivery_id")
     private Long deliveryId;
@@ -44,10 +43,10 @@ public class DeliveryRecipientSnapshot {
     @Column(name = "postal_code", nullable = false, length = 10)
     private String postalCode;
 
-    @Column(name = "base_address", nullable = false, length = 255)
+    @Column(name = "base_address", nullable = false)
     private String baseAddress;
 
-    @Column(name = "detail_address", length = 255)
+    @Column(name = "detail_address")
     private String detailAddress;
 
     @Column(name = "entrance_info_encrypted", length = 512)
