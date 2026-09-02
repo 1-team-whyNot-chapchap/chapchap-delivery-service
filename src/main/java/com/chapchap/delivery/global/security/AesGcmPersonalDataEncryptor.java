@@ -1,6 +1,6 @@
 package com.chapchap.delivery.global.security;
 
-import com.chapchap.delivery.global.security.exception.PersonalDataEncryptionException;
+import com.chapchap.delivery.global.exception.technical.PersonalDataEncryptionException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
