@@ -1,7 +1,7 @@
 package com.chapchap.delivery.domain.delivery.entity;
 
-import com.chapchap.delivery.domain.delivery.type.DeliveryStatus;
-import com.chapchap.delivery.domain.delivery.type.RequestHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
+import com.chapchap.delivery.domain.delivery.constant.RequestHandoffType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

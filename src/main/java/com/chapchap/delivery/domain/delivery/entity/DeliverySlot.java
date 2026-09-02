@@ -1,6 +1,6 @@
 package com.chapchap.delivery.domain.delivery.entity;
 
-import com.chapchap.delivery.domain.delivery.type.DeliverySlotCode;
+import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

@@ -1,7 +1,7 @@
 package com.chapchap.delivery.domain.delivery.entity;
 
-import com.chapchap.delivery.domain.delivery.type.IntegrationEventDirection;
-import com.chapchap.delivery.domain.delivery.type.IntegrationEventStatus;
+import com.chapchap.delivery.domain.delivery.constant.IntegrationEventDirection;
+import com.chapchap.delivery.domain.delivery.constant.IntegrationEventStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

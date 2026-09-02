@@ -1,7 +1,7 @@
 package com.chapchap.delivery.global.kafka.validator;
 
 import com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent;
-import com.chapchap.delivery.global.kafka.exception.InvalidSubscriptionDeliveryOrderEventException;
+import com.chapchap.delivery.global.exception.technical.InvalidSubscriptionDeliveryOrderEventException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
