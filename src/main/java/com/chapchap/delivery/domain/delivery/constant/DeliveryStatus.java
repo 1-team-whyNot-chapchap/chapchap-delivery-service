@@ -1,4 +1,4 @@
-package com.chapchap.delivery.domain.delivery.type;
+package com.chapchap.delivery.domain.delivery.constant;
 
 public enum DeliveryStatus {
     READY

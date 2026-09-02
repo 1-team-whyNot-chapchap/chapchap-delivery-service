@@ -8,7 +8,7 @@ import com.chapchap.delivery.domain.delivery.entity.DeliveryRecipientSnapshot;
 import com.chapchap.delivery.domain.delivery.entity.DeliverySlot;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryStatusHistory;
 import com.chapchap.delivery.domain.delivery.entity.IntegrationEventRecord;
-import com.chapchap.delivery.domain.delivery.exception.DeliveryRegistrationException;
+import com.chapchap.delivery.global.exception.business.DeliveryRegistrationException;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryAreaCodeRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupStatusHistoryRepository;

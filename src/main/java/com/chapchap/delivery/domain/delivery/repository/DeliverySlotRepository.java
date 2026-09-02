@@ -1,7 +1,7 @@
 package com.chapchap.delivery.domain.delivery.repository;
 
 import com.chapchap.delivery.domain.delivery.entity.DeliverySlot;
-import com.chapchap.delivery.domain.delivery.type.DeliverySlotCode;
+import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

@@ -36,9 +36,14 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
+
+    // junit
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
+    // 패키지 경로가 아닌 @Tag("unit") 어노테이션 기준으로 단위 테스트만 실행
     useJUnitPlatform()
 }

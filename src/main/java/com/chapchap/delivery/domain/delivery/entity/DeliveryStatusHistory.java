@@ -1,7 +1,7 @@
 package com.chapchap.delivery.domain.delivery.entity;
 
-import com.chapchap.delivery.domain.delivery.type.DeliveryChangedByType;
-import com.chapchap.delivery.domain.delivery.type.DeliveryStatus;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryChangedByType;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
