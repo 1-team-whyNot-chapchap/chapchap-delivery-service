@@ -4,6 +4,7 @@ import com.chapchap.delivery.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,14 +20,33 @@ public class GlobalExceptionHandler {
         BusinessException exception
     ) {
         log.debug(
-            "Business exception: code={}, message={}",
-            exception.getErrorCode().getCode(),
-            exception.getMessage()
+            "Business exception: code={}, message={}"
+            , exception.getErrorCode().getCode()
+            , exception.getMessage()
         );
 
         return createErrorResponse(
-            exception.getErrorCode(),
-            exception.getMessage()
+            exception.getErrorCode()
+            , exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleObjectOptimisticLockingFailureException(
+        ObjectOptimisticLockingFailureException exception
+    ) {
+        log.debug(
+            "Optimistic lock conflict occurred"
+            , exception
+        );
+
+        ErrorCode errorCode =
+            ErrorCode.OPTIMISTIC_LOCK_CONFLICT;
+
+        return createErrorResponse(
+            errorCode
+            , errorCode.getMessage()
         );
     }
 
@@ -35,15 +55,16 @@ public class GlobalExceptionHandler {
         TechnicalException exception
     ) {
         log.error(
-            "Technical exception occurred",
-            exception
+            "Technical exception occurred"
+            , exception
         );
 
-        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        ErrorCode errorCode =
+            ErrorCode.INTERNAL_SERVER_ERROR;
 
         return createErrorResponse(
-            errorCode,
-            errorCode.getMessage()
+            errorCode
+            , errorCode.getMessage()
         );
     }
 
@@ -79,7 +100,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(
         NoResourceFoundException exception
     ) {
-        ErrorCode errorCode = ErrorCode.RESOURCE_NOT_FOUND;
+        ErrorCode errorCode =
+            ErrorCode.RESOURCE_NOT_FOUND;
 
         return createErrorResponse(
             errorCode
@@ -92,20 +114,22 @@ public class GlobalExceptionHandler {
         Exception exception
     ) {
         log.error(
-            "Unexpected exception occurred",
-            exception
+            "Unexpected exception occurred"
+            , exception
         );
 
-        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        ErrorCode errorCode =
+            ErrorCode.INTERNAL_SERVER_ERROR;
 
         return createErrorResponse(
-            errorCode,
-            errorCode.getMessage()
+            errorCode
+            , errorCode.getMessage()
         );
     }
 
     private ResponseEntity<ApiResponse<Void>> createInvalidRequestResponse() {
-        ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
+        ErrorCode errorCode =
+            ErrorCode.INVALID_REQUEST;
 
         return createErrorResponse(
             errorCode

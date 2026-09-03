@@ -1,0 +1,15 @@
+CREATE TABLE riders (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+    , auth_user_id BIGINT UNSIGNED NOT NULL
+    , is_delivery_active BOOLEAN NOT NULL DEFAULT FALSE
+    , version BIGINT UNSIGNED NOT NULL DEFAULT 0
+    , created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
+    , updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
+    , deleted_at DATETIME NULL DEFAULT NULL
+
+    , PRIMARY KEY (id)
+
+    , CONSTRAINT uk_riders_auth_user_id
+        UNIQUE (auth_user_id)
+)
+;

@@ -22,6 +22,11 @@ public enum ErrorCode {
         , "COMMON_003"
         , "요청한 리소스를 찾을 수 없습니다."
     )
+    , AUTHENTICATION_REQUIRED(
+        HttpStatus.UNAUTHORIZED
+        , "COMMON_004"
+        , "인증이 필요합니다."
+    )
 
     // Delivery
     , DELIVERY_NOT_FOUND(
@@ -98,6 +103,16 @@ public enum ErrorCode {
         HttpStatus.INTERNAL_SERVER_ERROR
         , "DELIVERY_015"
         , "Kafka 이벤트 발행에 실패했습니다."
+    )
+    , RIDER_NOT_FOUND(
+        HttpStatus.NOT_FOUND
+        , "DELIVERY_016"
+        , "기사 정보를 찾을 수 없습니다."
+    )
+    , OTHER_REASON_DETAIL_REQUIRED(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_017"
+        , "기타 사유를 선택하면 상세 설명이 필요합니다."
     );
 
     private final HttpStatus httpStatus;

@@ -50,7 +50,6 @@ spring:
 
         spring.json.trusted.packages: com.chapchap.delivery.global.kafka.event
         spring.json.use.type.headers: false
-        spring.json.value.default.type: com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent
 
     listener:
       ack-mode: record
@@ -58,9 +57,11 @@ spring:
 kafka:
   topic:
     subscription-delivery-orders: subscription.delivery-orders.v1
+    auth-user-events: ${KAFKA_TOPIC_AUTH_USER:auth.user-events.v1}
 
   consumer-group:
     subscription-delivery-orders: delivery-service-order-group
+    auth-user-events: ${DELIVERY_AUTH_CONSUMER_GROUP:delivery-service-auth-group}
 
   retry:
     interval-ms: 1000

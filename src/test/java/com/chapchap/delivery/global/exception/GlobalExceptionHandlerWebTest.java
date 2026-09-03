@@ -5,27 +5,21 @@ import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest
-@Import({
-    GlobalExceptionHandler.class,
-    GlobalExceptionHandlerWebTest.TestController.class
-})
+@WebMvcTest(GlobalExceptionHandlerWebTest.TestController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import(GlobalExceptionHandlerWebTest.TestController.class)
 class GlobalExceptionHandlerWebTest {
 
     @Autowired
@@ -38,10 +32,10 @@ class GlobalExceptionHandlerWebTest {
                 post("/test")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
-                                        {
-                                          "name": ""
-                                        }
-                                        """)
+                        {
+                          "name": ""
+                        }
+                        """)
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("COMMON_001"))
@@ -56,10 +50,10 @@ class GlobalExceptionHandlerWebTest {
                 post("/test")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
-                                    {
-                                      "name":
-                                    }
-                                    """)
+                        {
+                          "name":
+                        }
+                        """)
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("COMMON_001"))
@@ -126,8 +120,7 @@ class GlobalExceptionHandlerWebTest {
     }
 
     record TestRequest(
-        @NotBlank
-        String name
+        @NotBlank String name
     ) {
     }
 }

@@ -5,10 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface DeliveryAreaCodeRepository
-    extends JpaRepository<DeliveryAreaCode, Long> {
-
+public interface DeliveryAreaCodeRepository extends JpaRepository<DeliveryAreaCode, Long> {
     Optional<DeliveryAreaCode> findByDistrictAndIsActiveTrue(
         String district
+    );
+
+    Optional<DeliveryAreaCode> findByAreaCodeAndIsActiveTrue(
+        String areaCode
     );
 }
