@@ -34,7 +34,6 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DeliveryAreaCode {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
