@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -64,6 +65,38 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getBody().message())
             .isEqualTo("서버 내부 오류가 발생했습니다.");
+
+        assertThat(response.getBody().data())
+            .isNull();
+    }
+
+    @Test
+    @DisplayName("낙관적 락 충돌 발생 시 DELIVERY_014와 409를 반환한다")
+    void handleObjectOptimisticLockingFailureException() {
+        ObjectOptimisticLockingFailureException exception =
+            new ObjectOptimisticLockingFailureException(
+                "Rider"
+                , 31L
+            );
+
+        ResponseEntity<ApiResponse<Void>> response =
+            handler.handleObjectOptimisticLockingFailureException(
+                exception
+            );
+
+        assertThat(response.getStatusCode())
+            .isEqualTo(HttpStatus.CONFLICT);
+
+        assertThat(response.getBody())
+            .isNotNull();
+
+        assertThat(response.getBody().code())
+            .isEqualTo("DELIVERY_014");
+
+        assertThat(response.getBody().message())
+            .isEqualTo(
+                "낙관적 락 버전이 일치하지 않습니다."
+            );
 
         assertThat(response.getBody().data())
             .isNull();

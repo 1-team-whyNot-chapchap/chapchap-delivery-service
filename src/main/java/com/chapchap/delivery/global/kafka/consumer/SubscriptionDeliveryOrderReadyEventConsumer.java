@@ -12,13 +12,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class SubscriptionDeliveryOrderReadyEventConsumer {
-
     private final SubscriptionDeliveryOrderReadyEventValidator validator;
     private final DeliveryRegistrationService deliveryRegistrationService;
 
     @KafkaListener(
         topics = "${kafka.topic.subscription-delivery-orders}"
         , groupId = "${kafka.consumer-group.subscription-delivery-orders}"
+        , properties = "spring.json.value.default.type=com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent"
     )
     public void handleSubscriptionDeliveryOrderReady(
         SubscriptionDeliveryOrderReadyEvent event
