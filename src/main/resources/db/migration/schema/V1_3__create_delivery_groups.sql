@@ -3,9 +3,9 @@ CREATE TABLE delivery_groups (
     , delivery_date DATE NOT NULL
     , slot_id BIGINT UNSIGNED NOT NULL
     , status VARCHAR(24) NOT NULL
-    , auto_assignment_completed_at DATETIME NULL  DEFAULT NULL
-    , actual_started_at DATETIME NULL  DEFAULT NULL
-    , actual_finished_at DATETIME NULL  DEFAULT NULL
+    , auto_assignment_completed_at DATETIME NULL DEFAULT NULL
+    , actual_started_at DATETIME NULL DEFAULT NULL
+    , actual_finished_at DATETIME NULL DEFAULT NULL
     , created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
     , updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
     , deleted_at DATETIME NULL DEFAULT NULL
