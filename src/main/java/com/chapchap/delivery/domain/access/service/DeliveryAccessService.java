@@ -13,7 +13,6 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class DeliveryAccessService {
-
     private final DeliveryAccessProfileRepository deliveryAccessProfileRepository;
 
     @Transactional(readOnly = true)
@@ -61,5 +60,16 @@ public class DeliveryAccessService {
         ) {
             throw new DeliveryAccessForbiddenException();
         }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isRiderAccessAllowed(Long authUserId) {
+        return deliveryAccessProfileRepository.findByAuthUserId(authUserId)
+            .map(
+                profile ->
+                    profile.getLastRole() == UserRole.RIDER
+                        && Boolean.TRUE.equals(profile.getAccessAllowed())
+            )
+            .orElse(false);
     }
 }

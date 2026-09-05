@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 
 @Component
@@ -25,6 +26,7 @@ public class AesGcmPersonalDataEncryptor
 
     private static final int KEY_LENGTH_BYTES = 32;
     private static final int IV_LENGTH_BYTES = 12;
+    private static final int TAG_LENGTH_BYTES = 16;
     private static final int TAG_LENGTH_BITS = 128;
 
     private final SecretKeySpec secretKey;
@@ -34,7 +36,10 @@ public class AesGcmPersonalDataEncryptor
         @Value("${security.personal-data.encryption-key}")
         String encodedKey
     ) {
-        byte[] keyBytes = decodeKey(encodedKey);
+        byte[] keyBytes =
+            decodeKey(
+                encodedKey
+            );
 
         if (keyBytes.length != KEY_LENGTH_BYTES) {
             throw new IllegalStateException(
@@ -43,9 +48,13 @@ public class AesGcmPersonalDataEncryptor
         }
 
         this.secretKey =
-            new SecretKeySpec(keyBytes, KEY_ALGORITHM);
+            new SecretKeySpec(
+                keyBytes
+                , KEY_ALGORITHM
+            );
 
-        this.secureRandom = new SecureRandom();
+        this.secureRandom =
+            new SecureRandom();
     }
 
     @Override
@@ -57,10 +66,13 @@ public class AesGcmPersonalDataEncryptor
         }
 
         try {
-            byte[] iv = createIv();
+            byte[] iv =
+                createIv();
 
             Cipher cipher =
-                Cipher.getInstance(TRANSFORMATION);
+                Cipher.getInstance(
+                    TRANSFORMATION
+                );
 
             GCMParameterSpec parameterSpec =
                 new GCMParameterSpec(
@@ -76,10 +88,15 @@ public class AesGcmPersonalDataEncryptor
 
             byte[] encrypted =
                 cipher.doFinal(
-                    plainText.getBytes(StandardCharsets.UTF_8)
+                    plainText.getBytes(
+                        StandardCharsets.UTF_8
+                    )
                 );
 
-            return combine(iv, encrypted);
+            return combine(
+                iv
+                , encrypted
+            );
         } catch (GeneralSecurityException exception) {
             throw new PersonalDataEncryptionException(
                 "Failed to encrypt personal data."
@@ -88,9 +105,79 @@ public class AesGcmPersonalDataEncryptor
         }
     }
 
+    @Override
+    public String decrypt(byte[] encryptedData) {
+        if (encryptedData == null) {
+            throw new IllegalArgumentException(
+                "Encrypted data must not be null."
+            );
+        }
+
+        if (
+            encryptedData.length
+                < IV_LENGTH_BYTES + TAG_LENGTH_BYTES
+        ) {
+            throw new PersonalDataEncryptionException(
+                "Encrypted personal data is invalid."
+            );
+        }
+
+        try {
+            byte[] iv =
+                Arrays.copyOfRange(
+                    encryptedData
+                    , 0
+                    , IV_LENGTH_BYTES
+                );
+
+            byte[] encrypted =
+                Arrays.copyOfRange(
+                    encryptedData
+                    , IV_LENGTH_BYTES
+                    , encryptedData.length
+                );
+
+            Cipher cipher =
+                Cipher.getInstance(
+                    TRANSFORMATION
+                );
+
+            GCMParameterSpec parameterSpec =
+                new GCMParameterSpec(
+                    TAG_LENGTH_BITS
+                    , iv
+                );
+
+            cipher.init(
+                Cipher.DECRYPT_MODE
+                , secretKey
+                , parameterSpec
+            );
+
+            byte[] decrypted =
+                cipher.doFinal(
+                    encrypted
+                );
+
+            return new String(
+                decrypted
+                , StandardCharsets.UTF_8
+            );
+        } catch (GeneralSecurityException exception) {
+            throw new PersonalDataEncryptionException(
+                "Failed to decrypt personal data."
+                , exception
+            );
+        }
+    }
+
     private byte[] decodeKey(String encodedKey) {
         try {
-            return Base64.getDecoder().decode(encodedKey);
+            return Base64
+                .getDecoder()
+                .decode(
+                    encodedKey
+                );
         } catch (IllegalArgumentException exception) {
             throw new IllegalStateException(
                 "Personal data encryption key must be Base64 encoded."
@@ -100,8 +187,13 @@ public class AesGcmPersonalDataEncryptor
     }
 
     private byte[] createIv() {
-        byte[] iv = new byte[IV_LENGTH_BYTES];
-        secureRandom.nextBytes(iv);
+        byte[] iv =
+            new byte[IV_LENGTH_BYTES];
+
+        secureRandom.nextBytes(
+            iv
+        );
+
         return iv;
     }
 
@@ -110,7 +202,10 @@ public class AesGcmPersonalDataEncryptor
         , byte[] encrypted
     ) {
         return ByteBuffer
-            .allocate(iv.length + encrypted.length)
+            .allocate(
+                iv.length
+                    + encrypted.length
+            )
             .put(iv)
             .put(encrypted)
             .array();

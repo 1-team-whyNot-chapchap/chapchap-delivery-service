@@ -34,7 +34,7 @@ class GlobalExceptionHandlerTest {
             .isNotNull();
 
         assertThat(response.getBody().code())
-            .isEqualTo("DELIVERY_003");
+            .isEqualTo("DELIVERY_011");
 
         assertThat(response.getBody().message())
             .isEqualTo("orderId 형식이 올바르지 않습니다.");
@@ -71,7 +71,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("낙관적 락 충돌 발생 시 DELIVERY_014와 409를 반환한다")
+    @DisplayName("낙관적 락 충돌 발생 시 DELIVERY_010과 409를 반환한다")
     void handleObjectOptimisticLockingFailureException() {
         ObjectOptimisticLockingFailureException exception =
             new ObjectOptimisticLockingFailureException(
@@ -91,11 +91,11 @@ class GlobalExceptionHandlerTest {
             .isNotNull();
 
         assertThat(response.getBody().code())
-            .isEqualTo("DELIVERY_014");
+            .isEqualTo("DELIVERY_010");
 
         assertThat(response.getBody().message())
             .isEqualTo(
-                "낙관적 락 버전이 일치하지 않습니다."
+                "다른 관리자가 먼저 수정했습니다. 최신 정보를 확인해 주세요."
             );
 
         assertThat(response.getBody().data())

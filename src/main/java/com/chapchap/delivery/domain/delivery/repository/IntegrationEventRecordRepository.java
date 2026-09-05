@@ -7,4 +7,6 @@ public interface IntegrationEventRecordRepository
     extends JpaRepository<IntegrationEventRecord, Long> {
 
     boolean existsByEventId(String eventId);
+
+    boolean existsByBusinessKey(String businessKey);
 }

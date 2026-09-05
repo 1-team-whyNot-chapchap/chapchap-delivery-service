@@ -191,6 +191,20 @@ public class RiderDeliveryAreaService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public boolean canDeliverToArea(
+        Long riderId
+        , String deliveryAreaCode
+        , LocalDate deliveryDate
+    ) {
+        return riderDeliveryAreaRepository
+            .existsAvailableDeliveryArea(
+                riderId
+                , deliveryAreaCode
+                , deliveryDate
+            );
+    }
+
     private RiderDeliveryAreaResponse handleExistingArea(
         RiderDeliveryArea riderDeliveryArea
         , RiderDeliveryAreaCreateRequest request
