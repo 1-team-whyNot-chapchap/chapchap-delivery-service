@@ -32,7 +32,6 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class IntegrationEventRecord {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -114,6 +113,70 @@ public class IntegrationEventRecord {
         record.status = IntegrationEventStatus.SUCCESS;
         record.occurredAt = occurredAt;
         record.processedAt = processedAt;
+
+        return record;
+    }
+
+    public static IntegrationEventRecord publishSuccess(
+        String eventId
+        , String eventType
+        , String aggregateType
+        , String aggregateId
+        , String businessKey
+        , LocalDateTime occurredAt
+        , LocalDateTime processedAt
+    ) {
+        IntegrationEventRecord record =
+            new IntegrationEventRecord();
+
+        record.eventId = eventId;
+        record.direction =
+            IntegrationEventDirection.PUBLISH;
+        record.eventType = eventType;
+        record.aggregateType = aggregateType;
+        record.aggregateId = aggregateId;
+        record.businessKey = businessKey;
+        record.status =
+            IntegrationEventStatus.SUCCESS;
+        record.attemptCount = 1;
+        record.lastAttemptedAt = processedAt;
+        record.occurredAt = occurredAt;
+        record.processedAt = processedAt;
+
+        return record;
+    }
+
+    public static IntegrationEventRecord publishFailed(
+        String eventId
+        , String eventType
+        , String aggregateType
+        , String aggregateId
+        , String businessKey
+        , String topic
+        , String eventKey
+        , String payloadJson
+        , LocalDateTime occurredAt
+        , LocalDateTime lastAttemptedAt
+        , String errorCode
+        , String errorMessage
+    ) {
+        IntegrationEventRecord record = new IntegrationEventRecord();
+
+        record.eventId = eventId;
+        record.direction = IntegrationEventDirection.PUBLISH;
+        record.eventType = eventType;
+        record.aggregateType = aggregateType;
+        record.aggregateId = aggregateId;
+        record.businessKey = businessKey;
+        record.status = IntegrationEventStatus.FAILED;
+        record.topic = topic;
+        record.eventKey = eventKey;
+        record.payloadJson = payloadJson;
+        record.attemptCount = 1;
+        record.lastAttemptedAt = lastAttemptedAt;
+        record.occurredAt = occurredAt;
+        record.errorCode = errorCode;
+        record.errorMessage = errorMessage;
 
         return record;
     }

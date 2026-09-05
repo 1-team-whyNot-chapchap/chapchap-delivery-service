@@ -39,7 +39,7 @@ class GlobalExceptionHandlerWebTest {
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("COMMON_001"))
-            .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
+            .andExpect(jsonPath("$.message").value("잘못된 요청 값입니다."))
             .andExpect(jsonPath("$.data").value((Object) null));
     }
 
@@ -57,7 +57,7 @@ class GlobalExceptionHandlerWebTest {
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("COMMON_001"))
-            .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
+            .andExpect(jsonPath("$.message").value("잘못된 요청 값입니다."))
             .andExpect(jsonPath("$.data").value((Object) null));
     }
 
@@ -69,7 +69,7 @@ class GlobalExceptionHandlerWebTest {
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("COMMON_001"))
-            .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
+            .andExpect(jsonPath("$.message").value("잘못된 요청 값입니다."))
             .andExpect(jsonPath("$.data").value((Object) null));
     }
 
@@ -81,7 +81,7 @@ class GlobalExceptionHandlerWebTest {
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("COMMON_001"))
-            .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
+            .andExpect(jsonPath("$.message").value("잘못된 요청 값입니다."))
             .andExpect(jsonPath("$.data").value((Object) null));
     }
 

@@ -29,7 +29,6 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DeliveryGroup {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -76,5 +75,47 @@ public class DeliveryGroup {
         this.deliveryDate = deliveryDate;
         this.slot = slot;
         this.status = DeliveryGroupStatus.WAITING_ASSIGNMENT;
+    }
+
+    public boolean isWaitingAutoAssignment() {
+        return status == DeliveryGroupStatus.WAITING_ASSIGNMENT
+            && autoAssignmentCompletedAt == null;
+    }
+
+    public void completeAutoAssignment(LocalDateTime completedAt) {
+        this.status = DeliveryGroupStatus.WAITING_RIDER;
+        this.autoAssignmentCompletedAt = completedAt;
+    }
+
+    public void completeManualAssignment() {
+        this.status = DeliveryGroupStatus.WAITING_RIDER;
+    }
+
+    public boolean isWaitingRider() {
+        return status == DeliveryGroupStatus.WAITING_RIDER;
+    }
+
+    public void returnToWaitingRider() {
+        this.status = DeliveryGroupStatus.WAITING_RIDER;
+    }
+
+    public void readyToConfirm() {
+        this.status = DeliveryGroupStatus.READY_TO_CONFIRM;
+    }
+
+    public void confirm() {
+        if (status != DeliveryGroupStatus.READY_TO_CONFIRM) {
+            throw new IllegalStateException("Only ready delivery groups can be confirmed");
+        }
+
+        this.status = DeliveryGroupStatus.CONFIRMED;
+    }
+
+    public boolean isIssueReview() {
+        return status == DeliveryGroupStatus.ISSUE_REVIEW;
+    }
+
+    public void issueReview() {
+        this.status = DeliveryGroupStatus.ISSUE_REVIEW;
     }
 }

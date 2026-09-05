@@ -17,14 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class RiderScheduleService {
-
     private final RiderRepository riderRepository;
     private final RiderWeeklyScheduleRepository riderWeeklyScheduleRepository;
     private final RiderScheduleExceptionRepository riderScheduleExceptionRepository;
@@ -97,6 +93,32 @@ public class RiderScheduleService {
             rider.getId()
             , rider.getIsDeliveryActive()
             , schedules
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isWorking(
+        Long riderId
+        , LocalDate deliveryDate
+        , DeliverySlotCode deliverySlot
+    ) {
+        Optional<RiderScheduleException> scheduleException =
+            riderScheduleExceptionRepository.findWorkingDecision(
+                riderId
+                , deliveryDate
+                , deliverySlot
+            );
+
+        if (scheduleException.isPresent()) {
+            return Boolean.TRUE.equals(
+                scheduleException.get().getIsWorking()
+            );
+        }
+
+        return riderWeeklyScheduleRepository.existsWorkingSchedule(
+            riderId
+            , (byte) deliveryDate.getDayOfWeek().getValue()
+            , deliverySlot
         );
     }
 
