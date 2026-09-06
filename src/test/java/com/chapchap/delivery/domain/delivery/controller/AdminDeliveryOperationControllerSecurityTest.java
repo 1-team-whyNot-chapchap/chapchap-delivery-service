@@ -42,7 +42,7 @@ class AdminDeliveryOperationControllerSecurityTest {
     @Test
     void adminCanReadOperationCounts() throws Exception {
         when(queryService.getCounts(eq(10L), eq(UserRole.ADMIN), any(), any()))
-            .thenReturn(new AdminDeliveryOperationCountsResponse(1, 2, 3, 4));
+            .thenReturn(new AdminDeliveryOperationCountsResponse(1, 2, 3, 4, 5));
         mockMvc.perform(get("/api/delivery/admin/delivery-operations/counts")
                 .header("X-User-Id", 10L)
                 .header("X-User-Role", UserRole.ADMIN.name()))

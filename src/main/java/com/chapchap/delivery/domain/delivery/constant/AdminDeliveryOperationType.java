@@ -5,4 +5,5 @@ public enum AdminDeliveryOperationType {
     , LATE_ORDER_REVIEW
     , ACKNOWLEDGEMENT_OVERDUE
     , UNRESOLVED_DELIVERY
+    , EVENT_PUBLISH_FAILED
 }
