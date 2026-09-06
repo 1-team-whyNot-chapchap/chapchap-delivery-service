@@ -6,12 +6,15 @@ import com.chapchap.delivery.domain.assignment.response.ManualAssignmentsRespons
 import com.chapchap.delivery.domain.assignment.service.AdminAutoAssignmentService;
 import com.chapchap.delivery.domain.assignment.service.AdminDeliveryGroupConfirmationService;
 import com.chapchap.delivery.domain.assignment.service.AdminManualAssignmentService;
+import com.chapchap.delivery.domain.delivery.service.AdminDeliveryQueryService;
+import com.chapchap.delivery.domain.delivery.response.AdminDeliveryGroupListResponse;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryGroupStatus;
 import com.chapchap.delivery.global.exception.ErrorCode;
 import com.chapchap.delivery.global.security.CustomAccessDeniedHandler;
 import com.chapchap.delivery.global.security.CustomAuthenticationEntryPoint;
 import com.chapchap.delivery.global.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -23,10 +26,12 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,6 +45,23 @@ class AdminDeliveryGroupControllerSecurityTest {
     @MockitoBean private AdminAutoAssignmentService adminAutoAssignmentService;
     @MockitoBean private AdminManualAssignmentService adminManualAssignmentService;
     @MockitoBean private AdminDeliveryGroupConfirmationService adminDeliveryGroupConfirmationService;
+    @MockitoBean private AdminDeliveryQueryService adminDeliveryQueryService;
+
+    @Test
+    @DisplayName("관리자는 전체 배송 목록을 조회할 수 있다")
+    void adminCanReadDeliveryGroups() throws Exception {
+        when(adminDeliveryQueryService.getDeliveryGroups(
+            eq(ACTOR_ID), eq(UserRole.ADMIN), any(), any(), any(), any()
+        )).thenReturn(new AdminDeliveryGroupListResponse(List.of(), 0, 20, 0, 0, false));
+
+        mockMvc.perform(
+                get("/api/delivery/admin/delivery-groups")
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.ADMIN.name())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.items").isArray());
+    }
 
     @Test
     void rejectsUnauthenticatedManualAssignment() throws Exception {
