@@ -21,14 +21,11 @@ import java.util.UUID;
 
 @Service
 public class RiderAssignmentNotificationService {
-    private static final ZoneId KST =
-        ZoneId.of("Asia/Seoul");
-
-    private static final String EVENT_TYPE =
-        "DELIVERY_OPERATION_NOTIFICATION_REQUESTED";
-
-    private static final String AGGREGATE_TYPE =
-        "DELIVERY_ASSIGNMENT";
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final String EVENT_TYPE = "DELIVERY_OPERATION_NOTIFICATION_REQUESTED";
+    private static final String NOTIFICATION_TYPE = "RIDER_ASSIGNMENT_AVAILABLE";
+    private static final String RECIPIENT_TYPE = "RIDER";
+    private static final String AGGREGATE_TYPE = "DELIVERY_ASSIGNMENT";
 
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final IntegrationEventRecordRepository integrationEventRecordRepository;
@@ -52,92 +49,74 @@ public class RiderAssignmentNotificationService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publish(Long assignmentId) {
-        DeliveryAssignment assignment =
-            deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(
-                    assignmentId
-                )
-                .orElseThrow(
-                    () -> new IllegalStateException(
-                        "Delivery assignment not found. assignmentId="
-                            + assignmentId
-                    )
-                );
+        DeliveryAssignment assignment = deliveryAssignmentRepository
+            .findByIdAndDeletedAtIsNull(assignmentId)
+            .orElse(null);
 
-        if (assignment.getNotifiedAt() != null) {
+        if (assignment == null
+            || !assignment.isAssigned()
+            || assignment.getDeliveryGroup().getDeletedAt() != null
+            || assignment.getRider().getDeletedAt() != null
+            || !Boolean.TRUE.equals(assignment.getRider().getIsDeliveryActive())
+            || assignment.getNotifiedAt() != null) {
             return;
         }
 
-        Long recipientUserId =
-            assignment.getRider()
-                .getAuthUserId();
+        String businessKey = DeliveryOperationNotificationBusinessKey
+            .riderAssignmentAvailable(assignment.getId());
+        if (integrationEventRecordRepository.existsByBusinessKey(businessKey)) {
+            return;
+        }
 
-        String eventId =
-            UUID.randomUUID().toString();
+        Long recipientUserId = assignment.getRider().getAuthUserId();
+        String eventId = UUID.randomUUID().toString();
+        String eventKey = String.valueOf(recipientUserId);
+        OffsetDateTime occurredAt = OffsetDateTime.now(KST);
 
-        String eventKey =
-            String.valueOf(recipientUserId);
-
-        String businessKey =
-            DeliveryOperationNotificationBusinessKey.riderAssignmentAvailable(
-                assignment.getId()
-            );
-
-        OffsetDateTime occurredAt =
-            OffsetDateTime.now(KST);
-
-        DeliveryOperationNotificationData data =
-            new DeliveryOperationNotificationData(
-                "RIDER_ASSIGNMENT_AVAILABLE"
-                , "RIDER"
-                , recipientUserId
-                , AGGREGATE_TYPE
-                , String.valueOf(assignment.getId())
-                , assignment.getDeliveryGroup().getDeliveryDate()
-                , assignment.getDeliveryGroup().getSlot().getCode().name()
-                , businessKey
-                , null
-                , null
-                , null
-            );
-
+        DeliveryOperationNotificationData data = new DeliveryOperationNotificationData(
+            NOTIFICATION_TYPE
+            , RECIPIENT_TYPE
+            , recipientUserId
+            , AGGREGATE_TYPE
+            , String.valueOf(assignment.getId())
+            , assignment.getDeliveryGroup().getDeliveryDate()
+            , assignment.getDeliveryGroup().getSlot().getCode().name()
+            , businessKey
+            , null
+            , null
+            , null
+        );
         DeliveryOperationNotificationRequestedEvent event =
             new DeliveryOperationNotificationRequestedEvent(
-                eventId
-                , EVENT_TYPE
-                , 1
-                , occurredAt
-                , null
-                , data
+                eventId, EVENT_TYPE, 1, occurredAt, null, data
             );
 
         String payloadJson = null;
-
         try {
-            payloadJson =
-                jsonMapper.writeValueAsString(
-                    event
-                );
-
-            deliveryOperationNotificationProducer.send(
-                    recipientUserId
-                    , event
-                )
-                .join();
-
-            assignment.markNotified(
-                occurredAt.toLocalDateTime()
-            );
+            payloadJson = jsonMapper.writeValueAsString(event);
+            deliveryOperationNotificationProducer.send(recipientUserId, event).join();
         } catch (Exception exception) {
             savePublishFailure(
-                assignment
-                , eventId
-                , eventKey
-                , businessKey
-                , payloadJson
-                , occurredAt
-                , exception
+                assignment, eventId, eventKey, businessKey,
+                payloadJson, occurredAt, exception
             );
+            return;
         }
+
+        LocalDateTime processedAt = LocalDateTime.now(KST);
+        integrationEventRecordRepository.save(IntegrationEventRecord.publishSuccess(
+            eventId
+            , EVENT_TYPE
+            , AGGREGATE_TYPE
+            , String.valueOf(assignment.getId())
+            , businessKey
+            , operationNotificationTopic
+            , eventKey
+            , payloadJson
+            , occurredAt.toLocalDateTime()
+            , processedAt
+        ));
+        assignment.markNotified(processedAt);
     }
 
     private void savePublishFailure(
@@ -149,64 +128,39 @@ public class RiderAssignmentNotificationService {
         , OffsetDateTime occurredAt
         , Exception exception
     ) {
-        Throwable rootCause =
-            findRootCause(
-                exception
-            );
-
-        IntegrationEventRecord record =
-            IntegrationEventRecord.publishFailed(
-                eventId
-                , EVENT_TYPE
-                , AGGREGATE_TYPE
-                , String.valueOf(assignment.getId())
-                , businessKey
-                , operationNotificationTopic
-                , eventKey
-                , payloadJson
-                , occurredAt.toLocalDateTime()
-                , LocalDateTime.now(KST)
-                , truncate(
-                    rootCause.getClass().getSimpleName()
-                    , 100
-                )
-                , truncate(
-                    rootCause.getMessage()
-                    , 500
-                )
-            );
-
-        integrationEventRecordRepository.save(
-            record
+        Throwable rootCause = findRootCause(exception);
+        IntegrationEventRecord record = IntegrationEventRecord.publishFailed(
+            eventId
+            , EVENT_TYPE
+            , AGGREGATE_TYPE
+            , String.valueOf(assignment.getId())
+            , businessKey
+            , operationNotificationTopic
+            , eventKey
+            , payloadJson
+            , occurredAt.toLocalDateTime()
+            , LocalDateTime.now(KST)
+            , truncate(rootCause.getClass().getSimpleName(), 100)
+            , truncate(rootCause.getMessage(), 500)
         );
+        integrationEventRecordRepository.save(record);
     }
 
     private Throwable findRootCause(Throwable throwable) {
-        Throwable current =
-            throwable;
-
+        Throwable current = throwable;
         while (current.getCause() != null) {
             current = current.getCause();
         }
-
         return current;
     }
 
-    private String truncate(
-        String value
-        , int maxLength
-    ) {
+    private String truncate(String value, int maxLength) {
         if (value == null) {
             return null;
         }
-
         if (value.length() <= maxLength) {
             return value;
         }
-
-        return value.substring(
-            0
-            , maxLength
-        );
+        return value.substring(0, maxLength);
     }
 }

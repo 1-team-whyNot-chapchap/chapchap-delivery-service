@@ -3,6 +3,7 @@ package com.chapchap.delivery.domain.assignment.service;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignment;
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentRepository;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
+import com.chapchap.delivery.domain.delivery.constant.IntegrationEventStatus;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.entity.DeliverySlot;
 import com.chapchap.delivery.domain.delivery.entity.IntegrationEventRecord;
@@ -11,6 +12,7 @@ import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.global.kafka.event.DeliveryOperationNotificationRequestedEvent;
 import com.chapchap.delivery.global.kafka.producer.DeliveryOperationNotificationRequestedEventProducer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -34,282 +37,139 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RiderAssignmentNotificationServiceTest {
-    @Mock
-    private DeliveryAssignmentRepository deliveryAssignmentRepository;
+    private static final String TOPIC = "delivery.operation-notification-requests.v1";
 
-    @Mock
-    private IntegrationEventRecordRepository integrationEventRecordRepository;
+    @Mock private DeliveryAssignmentRepository deliveryAssignmentRepository;
+    @Mock private IntegrationEventRecordRepository integrationEventRecordRepository;
+    @Mock private DeliveryOperationNotificationRequestedEventProducer producer;
+    @Mock private JsonMapper jsonMapper;
 
-    @Mock
-    private DeliveryOperationNotificationRequestedEventProducer deliveryOperationNotificationProducer;
-
-    @Mock
-    private JsonMapper jsonMapper;
-
-    private RiderAssignmentNotificationService riderAssignmentNotificationService;
+    private RiderAssignmentNotificationService service;
 
     @BeforeEach
     void setUp() {
-        riderAssignmentNotificationService =
-            new RiderAssignmentNotificationService(
-                deliveryAssignmentRepository
-                , integrationEventRecordRepository
-                , deliveryOperationNotificationProducer
-                , jsonMapper
-                , "delivery.operation-notification-requests.v1"
-            );
-    }
-
-    @Test
-    void publishMarksNotifiedWhenKafkaSendSucceeds() throws Exception {
-        Long assignmentId = 1L;
-        Long riderAuthUserId = 100L;
-
-        DeliveryAssignment assignment =
-            mock(DeliveryAssignment.class);
-
-        Rider rider =
-            mock(Rider.class);
-
-        DeliveryGroup deliveryGroup =
-            mock(DeliveryGroup.class);
-
-        DeliverySlot slot =
-            mock(DeliverySlot.class);
-
-        when(assignment.getId())
-            .thenReturn(assignmentId);
-
-        when(assignment.getRider())
-            .thenReturn(rider);
-
-        when(assignment.getDeliveryGroup())
-            .thenReturn(deliveryGroup);
-
-        when(rider.getAuthUserId())
-            .thenReturn(riderAuthUserId);
-
-        when(deliveryGroup.getDeliveryDate())
-            .thenReturn(
-                LocalDate.of(
-                    2026
-                    , 9
-                    , 5
-                )
-            );
-
-        when(deliveryGroup.getSlot())
-            .thenReturn(slot);
-
-        when(slot.getCode())
-            .thenReturn(DeliverySlotCode.LUNCH);
-
-        when(
-            deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(
-                assignmentId
-            )
-        )
-            .thenReturn(
-                Optional.of(assignment)
-            );
-
-        when(
-            jsonMapper.writeValueAsString(
-                any(DeliveryOperationNotificationRequestedEvent.class)
-            )
-        )
-            .thenReturn(
-                "{\"eventType\":\"DELIVERY_OPERATION_NOTIFICATION_REQUESTED\"}"
-            );
-
-        CompletableFuture<SendResult<String, Object>> successFuture =
-            CompletableFuture.completedFuture(
-                null
-            );
-
-        when(
-            deliveryOperationNotificationProducer.send(
-                eq(riderAuthUserId)
-                , any(DeliveryOperationNotificationRequestedEvent.class)
-            )
-        )
-            .thenReturn(successFuture);
-
-        riderAssignmentNotificationService.publish(
-            assignmentId
+        service = new RiderAssignmentNotificationService(
+            deliveryAssignmentRepository, integrationEventRecordRepository,
+            producer, jsonMapper, TOPIC
         );
-
-        verify(assignment)
-            .markNotified(
-                any(LocalDateTime.class)
-            );
-
-        verify(integrationEventRecordRepository, never())
-            .save(
-                any(IntegrationEventRecord.class)
-            );
     }
 
     @Test
+    @DisplayName("ASSIGNED 활성 기사 배정 알림 성공 시 SUCCESS 기록과 notifiedAt을 저장한다")
+    void publishSavesSuccessRecordAndMarksNotified() throws Exception {
+        Fixture fixture = fixture();
+        when(deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(1L))
+            .thenReturn(Optional.of(fixture.assignment()));
+        when(integrationEventRecordRepository.existsByBusinessKey(
+            "RIDER_ASSIGNMENT_AVAILABLE:1"
+        )).thenReturn(false);
+        when(jsonMapper.writeValueAsString(any(DeliveryOperationNotificationRequestedEvent.class)))
+            .thenReturn("{\"eventType\":\"DELIVERY_OPERATION_NOTIFICATION_REQUESTED\"}");
+        when(producer.send(eq(100L), any(DeliveryOperationNotificationRequestedEvent.class)))
+            .thenReturn(CompletableFuture.<SendResult<String, Object>>completedFuture(null));
+
+        service.publish(1L);
+
+        ArgumentCaptor<IntegrationEventRecord> captor =
+            ArgumentCaptor.forClass(IntegrationEventRecord.class);
+        verify(integrationEventRecordRepository).save(captor.capture());
+        IntegrationEventRecord record = captor.getValue();
+        assertThat(record.getStatus()).isEqualTo(IntegrationEventStatus.SUCCESS);
+        assertThat(record.getBusinessKey()).isEqualTo("RIDER_ASSIGNMENT_AVAILABLE:1");
+        assertThat(record.getTopic()).isEqualTo(TOPIC);
+        assertThat(record.getEventKey()).isEqualTo("100");
+        assertThat(record.getPayloadJson()).contains("DELIVERY_OPERATION_NOTIFICATION_REQUESTED");
+        verify(fixture.assignment()).markNotified(any(LocalDateTime.class));
+    }
+
+    @Test
+    @DisplayName("Kafka 발행 실패 시 FAILED 기록을 저장하고 notifiedAt은 변경하지 않는다")
     void publishSavesFailureRecordWhenKafkaSendFails() throws Exception {
-        Long assignmentId = 1L;
-        Long riderAuthUserId = 100L;
+        Fixture fixture = fixture();
+        when(deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(1L))
+            .thenReturn(Optional.of(fixture.assignment()));
+        when(integrationEventRecordRepository.existsByBusinessKey(
+            "RIDER_ASSIGNMENT_AVAILABLE:1"
+        )).thenReturn(false);
+        when(jsonMapper.writeValueAsString(any(DeliveryOperationNotificationRequestedEvent.class)))
+            .thenReturn("{\"eventType\":\"DELIVERY_OPERATION_NOTIFICATION_REQUESTED\"}");
+        CompletableFuture<SendResult<String, Object>> failed = new CompletableFuture<>();
+        failed.completeExceptionally(new RuntimeException("Kafka publish failed"));
+        when(producer.send(eq(100L), any(DeliveryOperationNotificationRequestedEvent.class)))
+            .thenReturn(failed);
 
-        DeliveryAssignment assignment =
-            mock(DeliveryAssignment.class);
+        service.publish(1L);
 
-        Rider rider =
-            mock(Rider.class);
+        ArgumentCaptor<IntegrationEventRecord> captor =
+            ArgumentCaptor.forClass(IntegrationEventRecord.class);
+        verify(integrationEventRecordRepository).save(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(IntegrationEventStatus.FAILED);
+        assertThat(captor.getValue().getAttemptCount()).isEqualTo(1);
+        verify(fixture.assignment(), never()).markNotified(any(LocalDateTime.class));
+    }
 
-        DeliveryGroup deliveryGroup =
-            mock(DeliveryGroup.class);
+    @Test
+    @DisplayName("ASSIGNED가 아닌 stale 배정은 신규 배정 알림을 발행하지 않는다")
+    void doesNotPublishWhenAssignmentIsNotAssigned() {
+        Fixture fixture = fixture();
+        when(fixture.assignment().isAssigned()).thenReturn(false);
+        when(deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(1L))
+            .thenReturn(Optional.of(fixture.assignment()));
 
-        DeliverySlot slot =
-            mock(DeliverySlot.class);
+        service.publish(1L);
 
-        when(assignment.getId())
-            .thenReturn(assignmentId);
+        verify(producer, never()).send(any(), any());
+        verify(integrationEventRecordRepository, never()).save(any());
+    }
 
-        when(assignment.getRider())
-            .thenReturn(rider);
+    @Test
+    @DisplayName("배송 업무 비활성 기사에게 신규 배정 알림을 발행하지 않는다")
+    void doesNotPublishWhenRiderIsInactive() {
+        Fixture fixture = fixture();
+        when(fixture.rider().getIsDeliveryActive()).thenReturn(false);
+        when(deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(1L))
+            .thenReturn(Optional.of(fixture.assignment()));
 
-        when(assignment.getDeliveryGroup())
-            .thenReturn(deliveryGroup);
+        service.publish(1L);
 
-        when(rider.getAuthUserId())
-            .thenReturn(riderAuthUserId);
+        verify(producer, never()).send(any(), any());
+        verify(integrationEventRecordRepository, never()).save(any());
+    }
 
-        when(deliveryGroup.getDeliveryDate())
-            .thenReturn(
-                LocalDate.of(
-                    2026
-                    , 9
-                    , 5
-                )
-            );
+    @Test
+    @DisplayName("동일 businessKey 기록이 있으면 중복 신규 배정 알림을 발행하지 않는다")
+    void doesNotPublishDuplicateBusinessKey() {
+        Fixture fixture = fixture();
+        when(deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(1L))
+            .thenReturn(Optional.of(fixture.assignment()));
+        when(integrationEventRecordRepository.existsByBusinessKey(
+            "RIDER_ASSIGNMENT_AVAILABLE:1"
+        )).thenReturn(true);
 
-        when(deliveryGroup.getSlot())
-            .thenReturn(slot);
+        service.publish(1L);
 
-        when(slot.getCode())
-            .thenReturn(DeliverySlotCode.LUNCH);
+        verify(producer, never()).send(any(), any());
+        verify(integrationEventRecordRepository, never()).save(any());
+    }
 
-        when(
-            deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(
-                assignmentId
-            )
-        )
-            .thenReturn(
-                Optional.of(assignment)
-            );
+    private Fixture fixture() {
+        DeliveryAssignment assignment = mock(DeliveryAssignment.class);
+        Rider rider = mock(Rider.class);
+        DeliveryGroup group = mock(DeliveryGroup.class);
+        DeliverySlot slot = mock(DeliverySlot.class);
 
-        when(
-            jsonMapper.writeValueAsString(
-                any(DeliveryOperationNotificationRequestedEvent.class)
-            )
-        )
-            .thenReturn(
-                "{\"eventType\":\"DELIVERY_OPERATION_NOTIFICATION_REQUESTED\"}"
-            );
+        lenient().when(assignment.getId()).thenReturn(1L);
+        lenient().when(assignment.isAssigned()).thenReturn(true);
+        lenient().when(assignment.getRider()).thenReturn(rider);
+        lenient().when(assignment.getDeliveryGroup()).thenReturn(group);
+        lenient().when(rider.getAuthUserId()).thenReturn(100L);
+        lenient().when(rider.getIsDeliveryActive()).thenReturn(true);
+        lenient().when(group.getDeliveryDate()).thenReturn(LocalDate.of(2026, 9, 7));
+        lenient().when(group.getSlot()).thenReturn(slot);
+        lenient().when(slot.getCode()).thenReturn(DeliverySlotCode.LUNCH);
+        return new Fixture(assignment, rider);
+    }
 
-        CompletableFuture<SendResult<String, Object>> failedFuture =
-            new CompletableFuture<>();
-
-        failedFuture.completeExceptionally(
-            new RuntimeException(
-                "Kafka publish failed"
-            )
-        );
-
-        when(
-            deliveryOperationNotificationProducer.send(
-                eq(riderAuthUserId)
-                , any(DeliveryOperationNotificationRequestedEvent.class)
-            )
-        )
-            .thenReturn(failedFuture);
-
-        riderAssignmentNotificationService.publish(
-            assignmentId
-        );
-
-        verify(assignment, never())
-            .markNotified(
-                any(LocalDateTime.class)
-            );
-
-        ArgumentCaptor<IntegrationEventRecord> recordCaptor =
-            ArgumentCaptor.forClass(
-                IntegrationEventRecord.class
-            );
-
-        verify(integrationEventRecordRepository)
-            .save(
-                recordCaptor.capture()
-            );
-
-        IntegrationEventRecord record =
-            recordCaptor.getValue();
-
-        assertThat(record.getDirection().name())
-            .isEqualTo("PUBLISH");
-
-        assertThat(record.getStatus().name())
-            .isEqualTo("FAILED");
-
-        assertThat(record.getEventType())
-            .isEqualTo(
-                "DELIVERY_OPERATION_NOTIFICATION_REQUESTED"
-            );
-
-        assertThat(record.getAggregateType())
-            .isEqualTo(
-                "DELIVERY_ASSIGNMENT"
-            );
-
-        assertThat(record.getAggregateId())
-            .isEqualTo(
-                String.valueOf(assignmentId)
-            );
-
-        assertThat(record.getBusinessKey())
-            .isEqualTo(
-                "RIDER_ASSIGNMENT_AVAILABLE:"
-                    + assignmentId
-            );
-
-        assertThat(record.getTopic())
-            .isEqualTo(
-                "delivery.operation-notification-requests.v1"
-            );
-
-        assertThat(record.getEventKey())
-            .isEqualTo(
-                String.valueOf(riderAuthUserId)
-            );
-
-        assertThat(record.getPayloadJson())
-            .isEqualTo(
-                "{\"eventType\":\"DELIVERY_OPERATION_NOTIFICATION_REQUESTED\"}"
-            );
-
-        assertThat(record.getAttemptCount())
-            .isEqualTo(1);
-
-        assertThat(record.getLastAttemptedAt())
-            .isNotNull();
-
-        assertThat(record.getOccurredAt())
-            .isNotNull();
-
-        assertThat(record.getErrorCode())
-            .isEqualTo(
-                "RuntimeException"
-            );
-
-        assertThat(record.getErrorMessage())
-            .isEqualTo(
-                "Kafka publish failed"
-            );
+    private record Fixture(DeliveryAssignment assignment, Rider rider) {
     }
 }

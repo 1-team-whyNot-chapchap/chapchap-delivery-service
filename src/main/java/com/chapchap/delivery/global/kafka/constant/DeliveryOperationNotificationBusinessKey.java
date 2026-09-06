@@ -50,4 +50,20 @@ public final class DeliveryOperationNotificationBusinessKey {
             + ":"
             + assignmentId;
     }
+
+    public static String adminLateOrder(String deliveryId) {
+        return "ADMIN_LATE_ORDER_REVIEW:" + deliveryId;
+    }
+
+    public static String adminAssignmentAction(String referenceType, Long referenceId, String reason) {
+        return "ADMIN_ASSIGNMENT_ACTION_REQUIRED:" + referenceType + ":" + referenceId + ":" + reason;
+    }
+
+    public static String adminUnresolvedDelivery(String deliveryId) {
+        return "ADMIN_UNRESOLVED_DELIVERY:" + deliveryId;
+    }
+
+    public static String adminEventPublishFailed(Long recordId) {
+        return "ADMIN_EVENT_PUBLISH_FAILED:" + recordId;
+    }
 }

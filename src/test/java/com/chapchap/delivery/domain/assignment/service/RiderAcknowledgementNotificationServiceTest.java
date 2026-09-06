@@ -381,6 +381,9 @@ class RiderAcknowledgementNotificationServiceTest {
         Rider rider =
             mock(Rider.class);
 
+        DeliveryGroup deliveryGroup =
+            mock(DeliveryGroup.class);
+
         when(
             deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(
                 ASSIGNMENT_ID
@@ -392,6 +395,9 @@ class RiderAcknowledgementNotificationServiceTest {
 
         when(assignment.isAssigned())
             .thenReturn(true);
+
+        when(assignment.getDeliveryGroup())
+            .thenReturn(deliveryGroup);
 
         when(assignment.getRider())
             .thenReturn(rider);
@@ -550,16 +556,13 @@ class RiderAcknowledgementNotificationServiceTest {
             assignment.getRider();
 
         DeliveryGroup deliveryGroup =
-            mock(DeliveryGroup.class);
+            assignment.getDeliveryGroup();
 
         DeliverySlot deliverySlot =
             mock(DeliverySlot.class);
 
         when(rider.getAuthUserId())
             .thenReturn(RIDER_AUTH_USER_ID);
-
-        when(assignment.getDeliveryGroup())
-            .thenReturn(deliveryGroup);
 
         when(deliveryGroup.getDeliveryDate())
             .thenReturn(deliveryDate);
@@ -580,6 +583,9 @@ class RiderAcknowledgementNotificationServiceTest {
         Rider rider =
             mock(Rider.class);
 
+        DeliveryGroup deliveryGroup =
+            mock(DeliveryGroup.class);
+
         when(
             deliveryAssignmentRepository.findByIdAndDeletedAtIsNull(
                 ASSIGNMENT_ID
@@ -591,6 +597,9 @@ class RiderAcknowledgementNotificationServiceTest {
 
         when(assignment.isAssigned())
             .thenReturn(true);
+
+        when(assignment.getDeliveryGroup())
+            .thenReturn(deliveryGroup);
 
         when(assignment.getRider())
             .thenReturn(rider);

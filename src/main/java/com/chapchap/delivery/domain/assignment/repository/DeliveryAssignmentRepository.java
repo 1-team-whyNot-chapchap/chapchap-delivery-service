@@ -196,6 +196,7 @@ public interface DeliveryAssignmentRepository
         WHERE dg.deliveryDate = :deliveryDate
             AND ds.code = :deliverySlot
             AND da.status = :status
+            AND dg.deletedAt IS NULL
             AND da.deletedAt IS NULL
             AND r.deletedAt IS NULL
             AND r.isDeliveryActive = true
