@@ -14,6 +14,7 @@ import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.entity.DeliverySlot;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
+import com.chapchap.delivery.domain.delivery.repository.IntegrationEventRecordRepository;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,13 +40,15 @@ class AdminDeliveryOperationQueryServiceTest {
     @Mock private DeliveryGroupRepository groupRepository;
     @Mock private DeliveryRepository deliveryRepository;
     @Mock private DeliveryAssignmentRepository assignmentRepository;
+    @Mock private IntegrationEventRecordRepository eventRecordRepository;
 
     private AdminDeliveryOperationQueryService service;
 
     @BeforeEach
     void setUp() {
         service = new AdminDeliveryOperationQueryService(
-            accessService, groupRepository, deliveryRepository, assignmentRepository
+            accessService, groupRepository, deliveryRepository, assignmentRepository,
+            eventRecordRepository
         );
     }
 

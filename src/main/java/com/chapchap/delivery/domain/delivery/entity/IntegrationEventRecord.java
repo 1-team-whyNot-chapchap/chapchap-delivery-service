@@ -195,4 +195,50 @@ public class IntegrationEventRecord {
 
         return record;
     }
+
+    public boolean isRepublishable() {
+        return direction == IntegrationEventDirection.PUBLISH
+            && status == IntegrationEventStatus.FAILED
+            && topic != null
+            && eventKey != null
+            && payloadJson != null;
+    }
+
+    public void markRepublishAttempt(LocalDateTime attemptedAt) {
+        if (!isRepublishable()) {
+            throw new IllegalStateException("Integration event is not republishable");
+        }
+        attemptCount++;
+        lastAttemptedAt = attemptedAt;
+    }
+
+    public void markRepublishSuccess(LocalDateTime processedAt) {
+        if (direction != IntegrationEventDirection.PUBLISH) {
+            throw new IllegalStateException("Integration event is not a publish record");
+        }
+        if (status == IntegrationEventStatus.SUCCESS) {
+            return;
+        }
+        if (status != IntegrationEventStatus.FAILED) {
+            throw new IllegalStateException("Integration event is not republishable");
+        }
+        this.processedAt = processedAt;
+        status = IntegrationEventStatus.SUCCESS;
+        errorCode = null;
+        errorMessage = null;
+    }
+
+    public void markRepublishFailure(String errorCode, String errorMessage) {
+        if (direction != IntegrationEventDirection.PUBLISH) {
+            throw new IllegalStateException("Integration event is not a publish record");
+        }
+        if (status == IntegrationEventStatus.SUCCESS) {
+            return;
+        }
+        if (status != IntegrationEventStatus.FAILED) {
+            throw new IllegalStateException("Integration event is not republishable");
+        }
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
+    }
 }

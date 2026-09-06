@@ -78,6 +78,11 @@ public class RiderReassignmentNotificationService {
             return;
         }
 
+        if (assignment.getDeliveryGroup().getDeletedAt() != null
+            || assignment.getRider().getDeletedAt() != null) {
+            return;
+        }
+
         if (!Boolean.TRUE.equals(
             assignment.getRider()
                 .getIsDeliveryActive()
@@ -185,6 +190,9 @@ public class RiderReassignmentNotificationService {
                 , AGGREGATE_TYPE
                 , String.valueOf(assignment.getId())
                 , businessKey
+                , operationNotificationTopic
+                , eventKey
+                , payloadJson
                 , occurredAt.toLocalDateTime()
                 , processedAt
             );

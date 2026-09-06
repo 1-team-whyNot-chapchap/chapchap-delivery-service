@@ -143,6 +143,16 @@ public enum ErrorCode {
         HttpStatus.BAD_REQUEST
         , "DELIVERY_021"
         , "기타 사유를 선택하면 상세 설명이 필요합니다."
+    )
+    , INTEGRATION_EVENT_NOT_FOUND(
+        HttpStatus.NOT_FOUND
+        , "DELIVERY_028"
+        , "이벤트 처리 기록을 찾을 수 없습니다."
+    )
+    , INTEGRATION_EVENT_NOT_REPUBLISHABLE(
+        HttpStatus.CONFLICT
+        , "DELIVERY_029"
+        , "재발행할 수 없는 이벤트 상태입니다."
     );
 
     private final HttpStatus httpStatus;

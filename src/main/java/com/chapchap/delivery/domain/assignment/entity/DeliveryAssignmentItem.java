@@ -39,7 +39,7 @@ public class DeliveryAssignmentItem {
     )
     private DeliveryAssignment assignment;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(
         name = "delivery_id"
         , nullable = false

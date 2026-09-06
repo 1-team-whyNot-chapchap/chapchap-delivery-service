@@ -14,6 +14,9 @@ import com.chapchap.delivery.domain.delivery.entity.Delivery;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
+import com.chapchap.delivery.domain.delivery.repository.IntegrationEventRecordRepository;
+import com.chapchap.delivery.domain.delivery.constant.IntegrationEventDirection;
+import com.chapchap.delivery.domain.delivery.constant.IntegrationEventStatus;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryOperationCountsResponse;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryOperationItemResponse;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryOperationListResponse;
@@ -43,6 +46,7 @@ public class AdminDeliveryOperationQueryService {
     private final DeliveryGroupRepository groupRepository;
     private final DeliveryRepository deliveryRepository;
     private final DeliveryAssignmentRepository assignmentRepository;
+    private final IntegrationEventRecordRepository eventRecordRepository;
 
     @Transactional(readOnly = true)
     public AdminDeliveryOperationCountsResponse getCounts(
@@ -59,6 +63,7 @@ public class AdminDeliveryOperationQueryService {
             , count(operations, AdminDeliveryOperationType.LATE_ORDER_REVIEW)
             , count(operations, AdminDeliveryOperationType.ACKNOWLEDGEMENT_OVERDUE)
             , count(operations, AdminDeliveryOperationType.UNRESOLVED_DELIVERY)
+            , count(operations, AdminDeliveryOperationType.EVENT_PUBLISH_FAILED)
         );
     }
 
@@ -77,10 +82,19 @@ public class AdminDeliveryOperationQueryService {
                 .getOrDefault(type, List.of())
         );
         items.sort(Comparator
-            .comparing(AdminDeliveryOperationItemResponse::deliveryDate).reversed()
-            .thenComparing(AdminDeliveryOperationItemResponse::deliveryGroupId)
+            .comparing(
+                AdminDeliveryOperationItemResponse::deliveryDate,
+                Comparator.nullsLast(Comparator.reverseOrder())
+            )
+            .thenComparing(
+                AdminDeliveryOperationItemResponse::deliveryGroupId,
+                Comparator.nullsLast(Comparator.naturalOrder())
+            )
             .thenComparing(item -> item.deliveryId() == null ? "" : item.deliveryId())
-            .thenComparing(item -> item.assignmentId() == null ? 0L : item.assignmentId()));
+            .thenComparing(item -> item.assignmentId() == null ? 0L : item.assignmentId())
+            .thenComparing(item ->
+                item.integrationEventRecordId() == null ? 0L : item.integrationEventRecordId()
+            ));
 
         int size = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
         int fromIndex = Math.min(pageable.getPageNumber() * size, items.size());
@@ -102,12 +116,11 @@ public class AdminDeliveryOperationQueryService {
         , LocalDateTime now
     ) {
         List<DeliveryGroup> groups = groupRepository.findAllForOperations(deliveryDate, slotCode);
-        if (groups.isEmpty()) {
-            return Map.of();
-        }
         List<Long> groupIds = groups.stream().map(DeliveryGroup::getId).toList();
-        List<Delivery> deliveries = deliveryRepository.findAllByDeliveryGroupIdIn(groupIds);
-        List<DeliveryAssignment> assignments = assignmentRepository.findAllByDeliveryGroupIdIn(groupIds);
+        List<Delivery> deliveries = groupIds.isEmpty()
+            ? List.of() : deliveryRepository.findAllByDeliveryGroupIdIn(groupIds);
+        List<DeliveryAssignment> assignments = groupIds.isEmpty()
+            ? List.of() : assignmentRepository.findAllByDeliveryGroupIdIn(groupIds);
         List<AdminDeliveryOperationItemResponse> result = new ArrayList<>();
         groups.stream().filter(group -> isAutoAssignmentFinalFailure(group, now))
             .map(group -> groupOperation(
@@ -131,6 +144,13 @@ public class AdminDeliveryOperationQueryService {
                 , unresolvedDeadline(delivery.getDeliveryGroup())
             ))
             .forEach(result::add);
+        eventRecordRepository.findAllByDirectionAndStatusOrderByIdAsc(
+            IntegrationEventDirection.PUBLISH, IntegrationEventStatus.FAILED
+        ).stream().map(record -> new AdminDeliveryOperationItemResponse(
+            AdminDeliveryOperationType.EVENT_PUBLISH_FAILED,
+            null, null, null, null, null, null, null, null, null,
+            toOffset(record.getLastAttemptedAt()), record.getId(), record.getEventType()
+        )).forEach(result::add);
 
         return result.stream().collect(Collectors.groupingBy(AdminDeliveryOperationItemResponse::type));
     }
@@ -178,7 +198,8 @@ public class AdminDeliveryOperationQueryService {
     ) {
         return new AdminDeliveryOperationItemResponse(
             type, group.getId(), null, null, null, group.getDeliveryDate(),
-            group.getSlot().getCode(), group.getStatus(), null, null, toOffset(detectedAt)
+            group.getSlot().getCode(), group.getStatus(), null, null, toOffset(detectedAt),
+            null, null
         );
     }
 
@@ -189,7 +210,7 @@ public class AdminDeliveryOperationQueryService {
         return new AdminDeliveryOperationItemResponse(
             type, group.getId(), delivery.getDeliveryPublicId(), null, null,
             group.getDeliveryDate(), group.getSlot().getCode(), group.getStatus(),
-            delivery.getStatus(), null, toOffset(detectedAt)
+            delivery.getStatus(), null, toOffset(detectedAt), null, null
         );
     }
 
@@ -203,7 +224,7 @@ public class AdminDeliveryOperationQueryService {
             AdminDeliveryOperationType.ACKNOWLEDGEMENT_OVERDUE, group.getId(), null,
             assignment.getId(), assignment.getRider().getId(), group.getDeliveryDate(),
             group.getSlot().getCode(), group.getStatus(), null, assignment.getStatus(),
-            toOffset(detectedAt)
+            toOffset(detectedAt), null, null
         );
     }
 

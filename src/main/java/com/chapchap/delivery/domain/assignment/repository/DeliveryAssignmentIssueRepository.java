@@ -60,4 +60,18 @@ public interface DeliveryAssignmentIssueRepository
     List<DeliveryAssignmentIssue> findAllByDeliveryGroupIdIn(
         @Param("deliveryGroupIds") List<Long> deliveryGroupIds
     );
+
+    @Query("""
+        SELECT issue
+        FROM DeliveryAssignmentIssue issue
+        JOIN FETCH issue.assignment assignment
+        JOIN FETCH assignment.deliveryGroup deliveryGroup
+        JOIN FETCH deliveryGroup.slot
+        WHERE issue.resolution IS NULL
+          AND issue.deletedAt IS NULL
+          AND assignment.deletedAt IS NULL
+          AND deliveryGroup.deletedAt IS NULL
+        ORDER BY issue.id ASC
+    """)
+    List<DeliveryAssignmentIssue> findAllUnresolvedForNotification();
 }

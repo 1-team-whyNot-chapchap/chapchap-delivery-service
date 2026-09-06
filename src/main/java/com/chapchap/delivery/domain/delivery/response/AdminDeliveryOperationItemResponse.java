@@ -21,5 +21,7 @@ public record AdminDeliveryOperationItemResponse(
     , DeliveryStatus deliveryStatus
     , DeliveryAssignmentStatus assignmentStatus
     , OffsetDateTime detectedAt
+    , Long integrationEventRecordId
+    , String eventType
 ) {
 }

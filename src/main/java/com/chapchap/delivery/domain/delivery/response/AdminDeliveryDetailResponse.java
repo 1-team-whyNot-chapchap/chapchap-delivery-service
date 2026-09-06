@@ -8,6 +8,8 @@ import com.chapchap.delivery.domain.delivery.constant.DeliveryProcessedByType;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
 import com.chapchap.delivery.domain.delivery.constant.RequestHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryResultCorrectionReason;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryResultType;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -31,6 +33,7 @@ public record AdminDeliveryDetailResponse(
     , Failure failure
     , List<StatusHistory> statusHistories
     , List<AssignmentHistory> assignmentHistories
+    , List<ResultCorrection> resultCorrections
 ) {
     public record Delay(Integer delayMinutes, OffsetDateTime detectedAt) {
     }
@@ -38,6 +41,8 @@ public record AdminDeliveryDetailResponse(
     public record Completion(
         ActualHandoffType actualHandoffType
         , String storageLocation
+        , ActualHandoffType effectiveActualHandoffType
+        , String effectiveStorageLocation
         , OffsetDateTime contactAttemptedAt
         , String contactResult
         , Long processedBy
@@ -53,6 +58,8 @@ public record AdminDeliveryDetailResponse(
         DeliveryFailureStage failureStage
         , DeliveryFailureCode failureCode
         , String failureDetail
+        , DeliveryFailureCode effectiveFailureCode
+        , String effectiveFailureDetail
         , OffsetDateTime contactAttemptedAt
         , String contactResult
         , Boolean itemRecovered
@@ -79,6 +86,19 @@ public record AdminDeliveryDetailResponse(
         , DeliveryAssignmentStatus status
         , OffsetDateTime assignedAt
         , OffsetDateTime acknowledgedAt
+    ) {
+    }
+
+    public record ResultCorrection(
+        Long correctionId
+        , DeliveryResultType resultType
+        , String fieldName
+        , String beforeValue
+        , String afterValue
+        , DeliveryResultCorrectionReason reasonCode
+        , String reasonDetail
+        , Long correctedBy
+        , OffsetDateTime correctedAt
     ) {
     }
 }

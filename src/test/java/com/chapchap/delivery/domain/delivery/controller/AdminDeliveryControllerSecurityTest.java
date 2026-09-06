@@ -13,9 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryRecoveryResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryResultType;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryRecoveryResponse;
+import com.chapchap.delivery.domain.delivery.response.AdminDeliveryResultCorrectionResponse;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryFailureService;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryRecoveryService;
+import com.chapchap.delivery.domain.delivery.service.AdminDeliveryResultCorrectionService;
 import com.chapchap.delivery.domain.delivery.service.DeliveryPhotoAccessService;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryQueryService;
 import com.chapchap.delivery.global.exception.ErrorCode;
@@ -56,6 +59,9 @@ class AdminDeliveryControllerSecurityTest {
 
     @MockitoBean
     private AdminDeliveryQueryService queryService;
+
+    @MockitoBean
+    private AdminDeliveryResultCorrectionService correctionService;
 
     @Test
     @DisplayName("고객은 관리자 배송 상세를 조회할 수 없다")
@@ -134,6 +140,103 @@ class AdminDeliveryControllerSecurityTest {
             .andExpect(jsonPath("$.data.recoveryResult").value("FAILED"));
     }
 
+
+    @Test
+    @DisplayName("완료 정정 API는 미인증 요청을 거절한다")
+    void completionCorrectionReturnsUnauthorizedWithoutAuthentication() throws Exception {
+        mockMvc.perform(
+                post("/api/delivery/admin/deliveries/{deliveryId}/completion-corrections", DELIVERY_ID)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(completionCorrectionRequest())
+            )
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value(ErrorCode.AUTHENTICATION_REQUIRED.getCode()));
+
+        verify(correctionService, never()).correctCompletion(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("기사는 관리자 완료 정정 API를 사용할 수 없다")
+    void completionCorrectionReturnsForbiddenForRider() throws Exception {
+        mockMvc.perform(
+                post("/api/delivery/admin/deliveries/{deliveryId}/completion-corrections", DELIVERY_ID)
+                    .header("X-User-Id", ADMIN_ID)
+                    .header("X-User-Role", UserRole.RIDER.name())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(completionCorrectionRequest())
+            )
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value(ErrorCode.DELIVERY_FORBIDDEN.getCode()));
+
+        verify(correctionService, never()).correctCompletion(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("관리자는 완료 정보를 정정할 수 있다")
+    void completionCorrectionReturnsSuccessForAdmin() throws Exception {
+        when(correctionService.correctCompletion(
+            eq(ADMIN_ID), eq(UserRole.ADMIN), eq(DELIVERY_ID), any()
+        )).thenReturn(new AdminDeliveryResultCorrectionResponse(
+            DELIVERY_ID, DeliveryResultType.COMPLETION,
+            java.util.List.of(new AdminDeliveryResultCorrectionResponse.Change(
+                1L, "storage_location", "기존 위치", "새 위치"
+            )),
+            ADMIN_ID, OffsetDateTime.parse("2026-09-07T12:00:00+09:00")
+        ));
+
+        mockMvc.perform(
+                post("/api/delivery/admin/deliveries/{deliveryId}/completion-corrections", DELIVERY_ID)
+                    .header("X-User-Id", ADMIN_ID)
+                    .header("X-User-Role", UserRole.ADMIN.name())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(completionCorrectionRequest())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("00"))
+            .andExpect(jsonPath("$.data.resultType").value("COMPLETION"));
+    }
+
+    @Test
+    @DisplayName("고객은 관리자 실패 정정 API를 사용할 수 없다")
+    void failureCorrectionReturnsForbiddenForCustomer() throws Exception {
+        mockMvc.perform(
+                post("/api/delivery/admin/deliveries/{deliveryId}/failure-corrections", DELIVERY_ID)
+                    .header("X-User-Id", ADMIN_ID)
+                    .header("X-User-Role", UserRole.CUSTOMER.name())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(failureCorrectionRequest())
+            )
+            .andExpect(status().isForbidden());
+
+        verify(correctionService, never()).correctFailure(any(), any(), any(), any());
+    }
+
+
+    @Test
+    @DisplayName("관리자는 실패 정보를 정정할 수 있다")
+    void failureCorrectionReturnsSuccessForAdmin() throws Exception {
+        when(correctionService.correctFailure(
+            eq(ADMIN_ID), eq(UserRole.ADMIN), eq(DELIVERY_ID), any()
+        )).thenReturn(new AdminDeliveryResultCorrectionResponse(
+            DELIVERY_ID, DeliveryResultType.FAILURE,
+            java.util.List.of(new AdminDeliveryResultCorrectionResponse.Change(
+                2L, "failure_detail", "기존 설명", "정정 설명"
+            )),
+            ADMIN_ID, OffsetDateTime.parse("2026-09-07T12:10:00+09:00")
+        ));
+
+        mockMvc.perform(
+                post("/api/delivery/admin/deliveries/{deliveryId}/failure-corrections", DELIVERY_ID)
+                    .header("X-User-Id", ADMIN_ID)
+                    .header("X-User-Role", UserRole.ADMIN.name())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(failureCorrectionRequest())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("00"))
+            .andExpect(jsonPath("$.data.resultType").value("FAILURE"));
+    }
+
     @Test
     @DisplayName("관리자 일반 대리 완료 API는 제공하지 않는다")
     void normalAdminCompletionEndpointDoesNotExist() throws Exception {
@@ -145,6 +248,35 @@ class AdminDeliveryControllerSecurityTest {
                     .content("{}")
             )
             .andExpect(status().isNotFound());
+    }
+
+
+    private String completionCorrectionRequest() {
+        return """
+            {
+              "changes": [
+                {
+                  "fieldName": "storage_location",
+                  "afterValue": "새 위치"
+                }
+              ],
+              "reasonCode": "DATA_ENTRY_ERROR"
+            }
+        """;
+    }
+
+    private String failureCorrectionRequest() {
+        return """
+            {
+              "changes": [
+                {
+                  "fieldName": "failure_detail",
+                  "afterValue": "정정 설명"
+                }
+              ],
+              "reasonCode": "DATA_ENTRY_ERROR"
+            }
+        """;
     }
 
     private String failedRecoveryRequest() {

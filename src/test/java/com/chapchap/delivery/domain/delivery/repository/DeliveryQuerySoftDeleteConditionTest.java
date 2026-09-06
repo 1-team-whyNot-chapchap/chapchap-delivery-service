@@ -48,6 +48,27 @@ class DeliveryQuerySoftDeleteConditionTest {
         );
     }
 
+
+    @Test
+    @DisplayName("운영 알림 대상 쿼리는 삭제된 전체 배송을 제외한다")
+    void operationNotificationQueriesExcludeDeletedDeliveryGroups() {
+        assertQueryContains(
+            DeliveryAssignmentRepository.class,
+            "findIdsForAcknowledgementPending",
+            "dg.deletedAt IS NULL"
+        );
+        assertQueryContains(
+            DeliveryRepository.class,
+            "findUnresolvedByDeliveryDateAndSlot",
+            "g.deletedAt IS NULL"
+        );
+        assertQueryContains(
+            DeliveryAssignmentIssueRepository.class,
+            "findAllUnresolvedForNotification",
+            "deliveryGroup.deletedAt IS NULL"
+        );
+    }
+
     private void assertQueryContains(
         Class<?> repositoryType
         , String methodName

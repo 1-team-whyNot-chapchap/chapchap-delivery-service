@@ -5,5 +5,6 @@ public record AdminDeliveryOperationCountsResponse(
     , long lateOrderReview
     , long acknowledgementOverdue
     , long unresolvedDelivery
+    , long eventPublishFailed
 ) {
 }
