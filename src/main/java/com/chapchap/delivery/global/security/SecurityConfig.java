@@ -64,17 +64,17 @@ public class SecurityConfig {
                     .permitAll()
 
                     .requestMatchers(
-                        "/api/admin/**"
+                        "/api/delivery/admin/**"
                     )
                     .hasRole("ADMIN")
 
                     .requestMatchers(
-                        "/api/rider/**"
+                        "/api/delivery/rider/**"
                     )
                     .hasRole("RIDER")
 
                     .requestMatchers(
-                        "/api/customer/**"
+                        "/api/delivery/customer/**"
                     )
                     .hasRole("CUSTOMER")
 
