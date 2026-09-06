@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/admin/assignment-issues")
+@RequestMapping("/api/delivery/admin/assignment-issues")
 public class AdminAssignmentIssueController {
 
     private final AdminAssignmentIssueRejectService adminAssignmentIssueRejectService;

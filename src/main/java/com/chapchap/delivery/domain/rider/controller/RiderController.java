@@ -27,7 +27,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/admin/riders")
+@RequestMapping("/api/delivery/admin/riders")
 public class RiderController {
     private final RiderService riderService;
     private final RiderWeeklyScheduleService riderWeeklyScheduleService;

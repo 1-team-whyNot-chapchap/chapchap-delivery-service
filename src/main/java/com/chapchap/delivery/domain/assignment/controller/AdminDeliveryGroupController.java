@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/admin/delivery-groups")
+@RequestMapping("/api/delivery/admin/delivery-groups")
 public class AdminDeliveryGroupController {
     private final AdminDeliveryGroupConfirmationService adminDeliveryGroupConfirmationService;
     private final AdminAutoAssignmentService adminAutoAssignmentService;

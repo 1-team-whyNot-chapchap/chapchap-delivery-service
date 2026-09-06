@@ -29,6 +29,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -610,4 +611,128 @@ class AutoAssignmentServiceTest {
         assertThat(savedAssignments.get(1).getRider())
             .isEqualTo(secondRider);
     }
+    @Test
+    void assignPrefersRiderWhoStaysWithinRecommendedCapacity() {
+        Long deliveryGroupId = 1L;
+        LocalDate deliveryDate = LocalDate.of(2026, 9, 5);
+
+        DeliverySlot slot = mock(DeliverySlot.class);
+        DeliveryGroup deliveryGroup = mock(DeliveryGroup.class);
+        Rider firstRider = mock(Rider.class);
+        Rider secondRider = mock(Rider.class);
+        Delivery firstDelivery = mock(Delivery.class);
+        Delivery secondDelivery = mock(Delivery.class);
+        Delivery thirdDelivery = mock(Delivery.class);
+
+        when(slot.getCode()).thenReturn(DeliverySlotCode.LUNCH);
+        when(deliveryGroup.isWaitingAutoAssignment()).thenReturn(true);
+        when(deliveryGroup.getDeliveryDate()).thenReturn(deliveryDate);
+        when(deliveryGroup.getSlot()).thenReturn(slot);
+        when(firstRider.getId()).thenReturn(10L);
+        when(secondRider.getId()).thenReturn(20L);
+
+        for (Delivery delivery : List.of(firstDelivery, secondDelivery, thirdDelivery)) {
+            when(delivery.getStatus()).thenReturn(DeliveryStatus.READY);
+            when(delivery.getDeliveryAreaCode()).thenReturn("DAEGU_JUNG_GU");
+        }
+        when(firstDelivery.getLunchboxQuantity()).thenReturn(30);
+        when(secondDelivery.getLunchboxQuantity()).thenReturn(1);
+        when(thirdDelivery.getLunchboxQuantity()).thenReturn(10);
+
+        when(deliveryGroupRepository.findByIdForUpdate(deliveryGroupId))
+            .thenReturn(Optional.of(deliveryGroup));
+        when(riderRepository.findAllByDeletedAtIsNullOrderByIdAsc())
+            .thenReturn(List.of(firstRider, secondRider));
+        when(riderRepository.findAllByIdInForUpdate(List.of(10L, 20L)))
+            .thenReturn(List.of(firstRider, secondRider));
+        when(deliveryRepository.findAllByDeliveryGroupIdForUpdate(deliveryGroupId))
+            .thenReturn(List.of(firstDelivery, secondDelivery, thirdDelivery));
+        when(deliveryAssignmentRepository.findAllByDeliveryGroupIdForUpdate(deliveryGroupId))
+            .thenReturn(List.of());
+        when(deliveryAssignmentItemRepository.findAllByDeliveryGroupIdForUpdate(deliveryGroupId))
+            .thenReturn(List.of());
+        when(
+            riderAssignmentEligibilityService.isEligible(
+                any(Rider.class)
+                , any(LocalDate.class)
+                , any(DeliverySlotCode.class)
+                , any(String.class)
+            )
+        ).thenReturn(true);
+        when(deliveryAssignmentRepository.save(any(DeliveryAssignment.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<DeliveryAssignmentItem> savedItems = new ArrayList<>();
+        when(deliveryAssignmentItemRepository.saveAll(any())).thenAnswer(invocation -> {
+            Iterable<DeliveryAssignmentItem> items = invocation.getArgument(0);
+            items.forEach(savedItems::add);
+            return savedItems;
+        });
+
+        assertThat(autoAssignmentService.assign(deliveryGroupId)).isTrue();
+
+        DeliveryAssignmentItem thirdItem = savedItems.stream()
+            .filter(item -> item.getDelivery() == thirdDelivery)
+            .findFirst()
+            .orElseThrow();
+
+        assertThat(thirdItem.getAssignment().getRider()).isEqualTo(secondRider);
+    }
+
+    @Test
+    void assignUsesMaximumCapacityOnlyWhenRecommendedCapacityCannotBeMaintained() {
+        Long deliveryGroupId = 1L;
+        LocalDate deliveryDate = LocalDate.of(2026, 9, 5);
+
+        DeliverySlot slot = mock(DeliverySlot.class);
+        DeliveryGroup deliveryGroup = mock(DeliveryGroup.class);
+        Rider rider = mock(Rider.class);
+        List<Delivery> deliveries = new ArrayList<>();
+        for (int index = 0; index < 9; index++) {
+            Delivery delivery = mock(Delivery.class);
+            when(delivery.getStatus()).thenReturn(DeliveryStatus.READY);
+            when(delivery.getDeliveryAreaCode()).thenReturn("DAEGU_JUNG_GU");
+            when(delivery.getLunchboxQuantity()).thenReturn(1);
+            deliveries.add(delivery);
+        }
+
+        when(slot.getCode()).thenReturn(DeliverySlotCode.LUNCH);
+        when(deliveryGroup.isWaitingAutoAssignment()).thenReturn(true);
+        when(deliveryGroup.getDeliveryDate()).thenReturn(deliveryDate);
+        when(deliveryGroup.getSlot()).thenReturn(slot);
+        when(rider.getId()).thenReturn(10L);
+        when(deliveryGroupRepository.findByIdForUpdate(deliveryGroupId))
+            .thenReturn(Optional.of(deliveryGroup));
+        when(riderRepository.findAllByDeletedAtIsNullOrderByIdAsc())
+            .thenReturn(List.of(rider));
+        when(riderRepository.findAllByIdInForUpdate(List.of(10L)))
+            .thenReturn(List.of(rider));
+        when(deliveryRepository.findAllByDeliveryGroupIdForUpdate(deliveryGroupId))
+            .thenReturn(deliveries);
+        when(deliveryAssignmentRepository.findAllByDeliveryGroupIdForUpdate(deliveryGroupId))
+            .thenReturn(List.of());
+        when(deliveryAssignmentItemRepository.findAllByDeliveryGroupIdForUpdate(deliveryGroupId))
+            .thenReturn(List.of());
+        when(
+            riderAssignmentEligibilityService.isEligible(
+                rider
+                , deliveryDate
+                , DeliverySlotCode.LUNCH
+                , "DAEGU_JUNG_GU"
+            )
+        ).thenReturn(true);
+        when(deliveryAssignmentRepository.save(any(DeliveryAssignment.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<DeliveryAssignmentItem> savedItems = new ArrayList<>();
+        when(deliveryAssignmentItemRepository.saveAll(any())).thenAnswer(invocation -> {
+            Iterable<DeliveryAssignmentItem> items = invocation.getArgument(0);
+            items.forEach(savedItems::add);
+            return savedItems;
+        });
+
+        assertThat(autoAssignmentService.assign(deliveryGroupId)).isTrue();
+        assertThat(savedItems).hasSize(9);
+    }
+
 }

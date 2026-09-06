@@ -88,7 +88,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                patch("/api/admin/riders/{riderId}/delivery-active", RIDER_ID)
+                patch("/api/delivery/admin/riders/{riderId}/delivery-active", RIDER_ID)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody)
             )
@@ -120,7 +120,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                patch("/api/admin/riders/{riderId}/delivery-active", RIDER_ID)
+                patch("/api/delivery/admin/riders/{riderId}/delivery-active", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -154,7 +154,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                patch("/api/admin/riders/{riderId}/delivery-active", RIDER_ID)
+                patch("/api/delivery/admin/riders/{riderId}/delivery-active", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -191,7 +191,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody)
             )
@@ -221,7 +221,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -273,7 +273,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -312,7 +312,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -360,7 +360,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                get("/api/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
+                get("/api/delivery/admin/riders/{riderId}/weekly-schedules", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
             )
@@ -388,7 +388,7 @@ class RiderControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 delete(
-                    "/api/admin/riders/{riderId}/weekly-schedules/{scheduleId}"
+                    "/api/delivery/admin/riders/{riderId}/weekly-schedules/{scheduleId}"
                     , RIDER_ID
                     , SCHEDULE_ID
                 )
@@ -424,7 +424,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody)
             )
@@ -457,7 +457,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -529,7 +529,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -571,7 +571,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -651,7 +651,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                get("/api/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
+                get("/api/delivery/admin/riders/{riderId}/schedule-exceptions", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .param("dateFrom", "2026-09-01")
@@ -730,7 +730,7 @@ class RiderControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 patch(
-                    "/api/admin/riders/{riderId}/schedule-exceptions/{exceptionId}"
+                    "/api/delivery/admin/riders/{riderId}/schedule-exceptions/{exceptionId}"
                     , RIDER_ID
                     , EXCEPTION_ID
                 )
@@ -775,7 +775,7 @@ class RiderControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 patch(
-                    "/api/admin/riders/{riderId}/schedule-exceptions/{exceptionId}"
+                    "/api/delivery/admin/riders/{riderId}/schedule-exceptions/{exceptionId}"
                     , RIDER_ID
                     , EXCEPTION_ID
                 )
@@ -803,7 +803,7 @@ class RiderControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 delete(
-                    "/api/admin/riders/{riderId}/schedule-exceptions/{exceptionId}"
+                    "/api/delivery/admin/riders/{riderId}/schedule-exceptions/{exceptionId}"
                     , RIDER_ID
                     , EXCEPTION_ID
                 )
@@ -838,7 +838,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/delivery-areas", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/delivery-areas", RIDER_ID)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody)
             )
@@ -870,7 +870,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/delivery-areas", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/delivery-areas", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -945,7 +945,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/delivery-areas", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/delivery-areas", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -984,7 +984,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                post("/api/admin/riders/{riderId}/delivery-areas", RIDER_ID)
+                post("/api/delivery/admin/riders/{riderId}/delivery-areas", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -1048,7 +1048,7 @@ class RiderControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                get("/api/admin/riders/{riderId}/delivery-areas", RIDER_ID)
+                get("/api/delivery/admin/riders/{riderId}/delivery-areas", RIDER_ID)
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
             )
@@ -1125,7 +1125,7 @@ class RiderControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 patch(
-                    "/api/admin/riders/{riderId}/delivery-areas/{riderAreaId}"
+                    "/api/delivery/admin/riders/{riderId}/delivery-areas/{riderAreaId}"
                     , RIDER_ID
                     , RIDER_AREA_ID
                 )
@@ -1167,7 +1167,7 @@ class RiderControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 patch(
-                    "/api/admin/riders/{riderId}/delivery-areas/{riderAreaId}"
+                    "/api/delivery/admin/riders/{riderId}/delivery-areas/{riderAreaId}"
                     , RIDER_ID
                     , RIDER_AREA_ID
                 )

@@ -263,6 +263,7 @@ public class AutoAssignmentService {
                 findPreferredRider(
                     assignableRiders
                     , riderLoadMap
+                    , delivery.getLunchboxQuantity()
                 );
 
             assignmentPlan
@@ -426,21 +427,42 @@ public class AutoAssignmentService {
     private Rider findPreferredRider(
         List<Rider> assignableRiders
         , Map<Long, RiderAssignmentLoad> riderLoadMap
+        , Integer additionalLunchboxQuantity
     ) {
-        assignableRiders.sort(
+        List<Rider> recommendedRiders =
+            assignableRiders.stream()
+                .filter(
+                    rider -> riderLoadMap
+                        .computeIfAbsent(
+                            rider.getId()
+                            , ignored -> new RiderAssignmentLoad(0, 0)
+                        )
+                        .canAssignWithinRecommended(additionalLunchboxQuantity)
+                )
+                .toList();
+
+        List<Rider> candidates = new ArrayList<>(
+            recommendedRiders.isEmpty() ? assignableRiders : recommendedRiders
+        );
+
+        candidates.sort(
             Comparator
                 .comparingInt(
-                    (Rider rider) ->
-                        riderLoadMap
-                            .computeIfAbsent(
-                                rider.getId()
-                                , ignored -> new RiderAssignmentLoad(0, 0)
-                            )
-                            .getVisitCount()
+                    (Rider rider) -> riderLoadMap
+                        .computeIfAbsent(
+                            rider.getId()
+                            , ignored -> new RiderAssignmentLoad(0, 0)
+                        )
+                        .getVisitCount()
+                )
+                .thenComparingInt(
+                    rider -> riderLoadMap
+                        .get(rider.getId())
+                        .getLunchboxQuantity()
                 )
                 .thenComparing(Rider::getId)
         );
 
-        return assignableRiders.getFirst();
+        return candidates.getFirst();
     }
 }
