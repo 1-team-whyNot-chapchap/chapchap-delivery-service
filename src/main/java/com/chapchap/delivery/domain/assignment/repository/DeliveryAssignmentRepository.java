@@ -23,6 +23,32 @@ public interface DeliveryAssignmentRepository
     Optional<DeliveryAssignment> findByIdAndDeletedAtIsNull(Long id);
 
     @Query("""
+        SELECT da
+        FROM DeliveryAssignment da
+        JOIN FETCH da.rider
+        WHERE da.deliveryGroup.id IN :deliveryGroupIds
+          AND da.deletedAt IS NULL
+        ORDER BY da.id ASC
+    """)
+    List<DeliveryAssignment> findAllByDeliveryGroupIdIn(
+        @Param("deliveryGroupIds") List<Long> deliveryGroupIds
+    );
+
+    @Query("""
+        SELECT DISTINCT da
+        FROM DeliveryAssignmentItem dai
+        JOIN dai.assignment da
+        JOIN FETCH da.rider
+        WHERE dai.delivery.id = :deliveryId
+          AND dai.deletedAt IS NULL
+          AND da.deletedAt IS NULL
+        ORDER BY da.id ASC
+    """)
+    List<DeliveryAssignment> findAllByDeliveryId(
+        @Param("deliveryId") Long deliveryId
+    );
+
+    @Query("""
         SELECT DISTINCT da.rider.id
         FROM DeliveryAssignment da
         WHERE da.deliveryGroup.id = :deliveryGroupId
@@ -52,6 +78,7 @@ public interface DeliveryAssignmentRepository
         FROM DeliveryAssignment da
         WHERE da.id = :assignmentId
             AND da.rider.authUserId = :authUserId
+            AND da.deliveryGroup.deletedAt IS NULL
             AND da.rider.deletedAt IS NULL
             AND da.deletedAt IS NULL
     """)
@@ -118,6 +145,7 @@ public interface DeliveryAssignmentRepository
                 JOIN dai.delivery d
             WHERE da.rider.authUserId = :authUserId
                 AND da.rider.deletedAt IS NULL
+                AND dg.deletedAt IS NULL
                 AND da.deletedAt IS NULL
                 AND dai.deletedAt IS NULL
                 AND (:deliveryDate IS NULL OR dg.deliveryDate = :deliveryDate)
@@ -143,6 +171,7 @@ public interface DeliveryAssignmentRepository
                 JOIN dai.delivery d
             WHERE da.rider.authUserId = :authUserId
                 AND da.rider.deletedAt IS NULL
+                AND dg.deletedAt IS NULL
                 AND da.deletedAt IS NULL
                 AND dai.deletedAt IS NULL
                 AND (:deliveryDate IS NULL OR dg.deliveryDate = :deliveryDate)

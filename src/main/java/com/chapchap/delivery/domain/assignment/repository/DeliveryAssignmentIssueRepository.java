@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 public interface DeliveryAssignmentIssueRepository
     extends JpaRepository<DeliveryAssignmentIssue, Long> {
@@ -45,5 +46,18 @@ public interface DeliveryAssignmentIssueRepository
     """)
     long countUnresolvedByDeliveryGroupId(
         @Param("deliveryGroupId") Long deliveryGroupId
+    );
+
+    @Query("""
+        SELECT dai
+        FROM DeliveryAssignmentIssue dai
+        JOIN FETCH dai.assignment da
+        WHERE da.deliveryGroup.id IN :deliveryGroupIds
+          AND dai.deletedAt IS NULL
+          AND da.deletedAt IS NULL
+        ORDER BY dai.id ASC
+    """)
+    List<DeliveryAssignmentIssue> findAllByDeliveryGroupIdIn(
+        @Param("deliveryGroupIds") List<Long> deliveryGroupIds
     );
 }

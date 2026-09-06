@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +18,65 @@ import java.time.LocalDate;
 
 public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
     Optional<Delivery> findByDeliveryPublicId(String deliveryPublicId);
+
+    @Query(
+        value = """
+            SELECT d
+            FROM Delivery d
+            JOIN FETCH d.deliveryGroup g
+            JOIN FETCH g.slot s
+            WHERE d.customerId = :customerId
+              AND g.deletedAt IS NULL
+              AND (:dateFrom IS NULL OR g.deliveryDate >= :dateFrom)
+              AND (:dateTo IS NULL OR g.deliveryDate <= :dateTo)
+              AND (:slotCode IS NULL OR s.code = :slotCode)
+              AND (:status IS NULL OR d.status = :status)
+        """
+        , countQuery = """
+            SELECT COUNT(d)
+            FROM Delivery d
+            JOIN d.deliveryGroup g
+            JOIN g.slot s
+            WHERE d.customerId = :customerId
+              AND g.deletedAt IS NULL
+              AND (:dateFrom IS NULL OR g.deliveryDate >= :dateFrom)
+              AND (:dateTo IS NULL OR g.deliveryDate <= :dateTo)
+              AND (:slotCode IS NULL OR s.code = :slotCode)
+              AND (:status IS NULL OR d.status = :status)
+        """
+    )
+    Page<Delivery> findAllForCustomer(
+        @Param("customerId") Long customerId
+        , @Param("dateFrom") LocalDate dateFrom
+        , @Param("dateTo") LocalDate dateTo
+        , @Param("slotCode") DeliverySlotCode slotCode
+        , @Param("status") DeliveryStatus status
+        , Pageable pageable
+    );
+
+    @Query("""
+        SELECT d
+        FROM Delivery d
+        JOIN FETCH d.deliveryGroup g
+        JOIN FETCH g.slot
+        WHERE d.deliveryPublicId = :deliveryPublicId
+          AND g.deletedAt IS NULL
+    """)
+    Optional<Delivery> findDetailByDeliveryPublicId(
+        @Param("deliveryPublicId") String deliveryPublicId
+    );
+
+    @Query("""
+        SELECT d
+        FROM Delivery d
+        JOIN FETCH d.deliveryGroup g
+        JOIN FETCH g.slot
+        WHERE g.id IN :deliveryGroupIds
+        ORDER BY d.id ASC
+    """)
+    List<Delivery> findAllByDeliveryGroupIdIn(
+        @Param("deliveryGroupIds") List<Long> deliveryGroupIds
+    );
 
     @Modifying(flushAutomatically = true)
     @Query("""
