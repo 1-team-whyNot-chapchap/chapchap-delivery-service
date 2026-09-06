@@ -146,6 +146,21 @@ public class IntegrationEventRecord {
         return record;
     }
 
+    public static IntegrationEventRecord publishSuccess(
+        String eventId, String eventType, String aggregateType, String aggregateId,
+        String businessKey, String topic, String eventKey, String payloadJson,
+        LocalDateTime occurredAt, LocalDateTime processedAt
+    ) {
+        IntegrationEventRecord record = publishSuccess(
+            eventId, eventType, aggregateType, aggregateId, businessKey,
+            occurredAt, processedAt
+        );
+        record.topic = topic;
+        record.eventKey = eventKey;
+        record.payloadJson = payloadJson;
+        return record;
+    }
+
     public static IntegrationEventRecord publishFailed(
         String eventId
         , String eventType
