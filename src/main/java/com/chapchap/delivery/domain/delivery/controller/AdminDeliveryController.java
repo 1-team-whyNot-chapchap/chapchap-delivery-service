@@ -3,10 +3,12 @@ package com.chapchap.delivery.domain.delivery.controller;
 import com.chapchap.delivery.domain.delivery.request.AdminDeliveryFailureRequest;
 import com.chapchap.delivery.domain.delivery.request.AdminDeliveryRecoveryRequest;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryRecoveryResponse;
+import com.chapchap.delivery.domain.delivery.response.AdminDeliveryDetailResponse;
 import com.chapchap.delivery.domain.delivery.response.DeliveryPhotoAccessResponse;
 import com.chapchap.delivery.domain.delivery.response.RiderDeliveryFailureResponse;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryFailureService;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryRecoveryService;
+import com.chapchap.delivery.domain.delivery.service.AdminDeliveryQueryService;
 import com.chapchap.delivery.domain.delivery.service.DeliveryPhotoAccessService;
 import com.chapchap.delivery.global.response.ApiResponse;
 import com.chapchap.delivery.global.security.AuthenticatedUser;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +30,18 @@ public class AdminDeliveryController {
     private final AdminDeliveryFailureService failureService;
     private final DeliveryPhotoAccessService photoAccessService;
     private final AdminDeliveryRecoveryService recoveryService;
+    private final AdminDeliveryQueryService queryService;
+
+    @GetMapping("/{deliveryId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<AdminDeliveryDetailResponse> getDelivery(
+        @AuthenticationPrincipal AuthenticatedUser user
+        , @PathVariable String deliveryId
+    ) {
+        return ApiResponse.success(
+            queryService.getDelivery(user.userId(), user.role(), deliveryId)
+        );
+    }
 
     @PostMapping("/{deliveryId}/completion-photo/access")
     @PreAuthorize("hasRole('ADMIN')")

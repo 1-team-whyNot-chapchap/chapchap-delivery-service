@@ -7,8 +7,8 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: ${DELIVERY_PHOTO_MAX_FILE_SIZE:10MB}
-      max-request-size: ${DELIVERY_PHOTO_MAX_REQUEST_SIZE:11MB}
+      max-file-size: ${DELIVERY_PHOTO_MAX_FILE_SIZE}
+      max-request-size: ${DELIVERY_PHOTO_MAX_REQUEST_SIZE}
 
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -68,16 +68,16 @@ spring:
 
 kafka:
   topic:
-    subscription-delivery-orders: subscription.delivery-orders.v1
-    auth-user-events: ${KAFKA_TOPIC_AUTH_USER:auth.user-events.v1}
+    subscription-delivery-orders: ${KAFKA_TOPIC_SUBSCRIPTION_DELIVERY_ORDER}
+    auth-user-events: ${KAFKA_TOPIC_AUTH_USER}
 
   consumer-group:
-    subscription-delivery-orders: delivery-service-order-group
-    auth-user-events: ${DELIVERY_AUTH_CONSUMER_GROUP:delivery-service-auth-group}
+    subscription-delivery-orders: ${DELIVERY_ORDER_CONSUMER_GROUP}
+    auth-user-events: ${DELIVERY_AUTH_CONSUMER_GROUP}
 
   retry:
-    interval-ms: 1000
-    max-retries: 3
+    interval-ms: ${KAFKA_RETRY_INTERVAL_MS}
+    max-retries: ${KAFKA_MAX_RETRIES}
 
 management:
   endpoints:
@@ -91,21 +91,22 @@ springdoc:
 
 security:
   personal-data:
+    # Base64 인코딩된 32바이트 AES 키
     encryption-key: ${PERSONAL_DATA_ENCRYPTION_KEY}
 
 app:
   storage:
     delivery-photo:
-      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      endpoint: ${MINIO_ENDPOINT}
       access-key: ${MINIO_ACCESS_KEY}
       secret-key: ${MINIO_SECRET_KEY}
-      bucket: ${MINIO_DELIVERY_PHOTO_BUCKET:delivery-photos}
-      presigned-url-minutes: ${DELIVERY_PHOTO_PRESIGNED_MINUTES:10}
-      max-file-size-bytes: ${DELIVERY_PHOTO_MAX_FILE_SIZE_BYTES:10485760}
-      allowed-content-types: ${DELIVERY_PHOTO_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/webp}
+      bucket: ${MINIO_DELIVERY_PHOTO_BUCKET}
+      presigned-url-minutes: ${DELIVERY_PHOTO_PRESIGNED_MINUTES}
+      max-file-size-bytes: ${DELIVERY_PHOTO_MAX_FILE_SIZE_BYTES}
+      allowed-content-types: ${DELIVERY_PHOTO_ALLOWED_CONTENT_TYPES}
   kafka:
     topics:
-      auth-user: ${KAFKA_TOPIC_AUTH_USER:auth.user-events.v1}
-      delivery-event: ${KAFKA_TOPIC_DELIVERY_EVENT:delivery.delivery-events.v1}
-      delivery-refund-event: ${KAFKA_TOPIC_DELIVERY_REFUND_EVENT:delivery.refund-events.v1}
-      operation-notification: ${KAFKA_TOPIC_OPERATION_NOTIFICATION:delivery.operation-notification-requests.v1}
+      auth-user: ${KAFKA_TOPIC_AUTH_USER}
+      delivery-event: ${KAFKA_TOPIC_DELIVERY_EVENT}
+      delivery-refund-event: ${KAFKA_TOPIC_DELIVERY_REFUND_EVENT}
+      operation-notification: ${KAFKA_TOPIC_OPERATION_NOTIFICATION}

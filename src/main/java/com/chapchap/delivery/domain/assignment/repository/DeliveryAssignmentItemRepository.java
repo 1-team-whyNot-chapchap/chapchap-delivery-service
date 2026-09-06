@@ -31,9 +31,26 @@ public interface DeliveryAssignmentItemRepository
         JOIN FETCH dai.delivery d
         WHERE dai.assignment.id = :assignmentId
             AND dai.deletedAt IS NULL
+            AND dai.assignment.deliveryGroup.deletedAt IS NULL
+            AND d.deliveryGroup.deletedAt IS NULL
         ORDER BY dai.id ASC
     """)
     List<DeliveryAssignmentItem> findAllByAssignmentIdWithDelivery(
         @Param("assignmentId") Long assignmentId
+    );
+
+    @Query("""
+        SELECT dai
+        FROM DeliveryAssignmentItem dai
+        JOIN FETCH dai.assignment da
+        JOIN FETCH da.rider
+        JOIN FETCH dai.delivery d
+        WHERE da.deliveryGroup.id IN :deliveryGroupIds
+          AND dai.deletedAt IS NULL
+          AND da.deletedAt IS NULL
+        ORDER BY dai.id ASC
+    """)
+    List<DeliveryAssignmentItem> findAllByDeliveryGroupIdIn(
+        @Param("deliveryGroupIds") List<Long> deliveryGroupIds
     );
 }

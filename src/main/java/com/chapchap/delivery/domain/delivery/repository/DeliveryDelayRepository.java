@@ -2,6 +2,8 @@ package com.chapchap.delivery.domain.delivery.repository;
 
 import com.chapchap.delivery.domain.delivery.entity.DeliveryDelay;
 import java.util.Optional;
+import java.util.Collection;
+import java.util.List;
 import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -13,6 +15,10 @@ public interface DeliveryDelayRepository
 
     Optional<DeliveryDelay> findByDeliveryId(
         Long deliveryId
+    );
+
+    List<DeliveryDelay> findAllByDeliveryIdIn(
+        Collection<Long> deliveryIds
     );
 
     @Modifying

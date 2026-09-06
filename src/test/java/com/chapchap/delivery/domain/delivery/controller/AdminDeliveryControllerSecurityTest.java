@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,6 +17,7 @@ import com.chapchap.delivery.domain.delivery.response.AdminDeliveryRecoveryRespo
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryFailureService;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryRecoveryService;
 import com.chapchap.delivery.domain.delivery.service.DeliveryPhotoAccessService;
+import com.chapchap.delivery.domain.delivery.service.AdminDeliveryQueryService;
 import com.chapchap.delivery.global.exception.ErrorCode;
 import com.chapchap.delivery.global.security.CustomAccessDeniedHandler;
 import com.chapchap.delivery.global.security.CustomAuthenticationEntryPoint;
@@ -51,6 +53,22 @@ class AdminDeliveryControllerSecurityTest {
 
     @MockitoBean
     private AdminDeliveryRecoveryService recoveryService;
+
+    @MockitoBean
+    private AdminDeliveryQueryService queryService;
+
+    @Test
+    @DisplayName("고객은 관리자 배송 상세를 조회할 수 없다")
+    void customerCannotReadAdminDeliveryDetail() throws Exception {
+        mockMvc.perform(
+                get("/api/delivery/admin/deliveries/{deliveryId}", DELIVERY_ID)
+                    .header("X-User-Id", ADMIN_ID)
+                    .header("X-User-Role", UserRole.CUSTOMER.name())
+            )
+            .andExpect(status().isForbidden());
+
+        verify(queryService, never()).getDelivery(any(), any(), any());
+    }
 
     @Test
     @DisplayName("관리자 복구 API는 미인증 요청을 거절한다")
