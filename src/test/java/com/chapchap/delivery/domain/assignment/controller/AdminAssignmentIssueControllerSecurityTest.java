@@ -57,7 +57,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reject"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reject"
                     , ISSUE_ID
                 )
                     .contentType(MediaType.APPLICATION_JSON)
@@ -93,7 +93,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reject"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reject"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -131,7 +131,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reject"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reject"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -169,7 +169,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reject"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reject"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -204,7 +204,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reject"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reject"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -244,7 +244,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reassign"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reassign"
                     , ISSUE_ID
                 )
                     .contentType(MediaType.APPLICATION_JSON)
@@ -284,7 +284,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reassign"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reassign"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -326,7 +326,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reassign"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reassign"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -371,7 +371,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reassign"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reassign"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -410,7 +410,7 @@ class AdminAssignmentIssueControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/admin/assignment-issues/{issueId}/reassign"
+                    "/api/delivery/admin/assignment-issues/{issueId}/reassign"
                     , ISSUE_ID
                 )
                     .header("X-User-Id", ACTOR_ID)

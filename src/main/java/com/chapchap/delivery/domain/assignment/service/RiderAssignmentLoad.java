@@ -21,6 +21,12 @@ class RiderAssignmentLoad {
             && lunchboxQuantity + additionalLunchboxQuantity <= DeliveryAssignmentCapacity.MAX_LUNCHBOX_QUANTITY;
     }
 
+    public boolean canAssignWithinRecommended(Integer additionalLunchboxQuantity) {
+        return visitCount + 1 <= DeliveryAssignmentCapacity.RECOMMENDED_VISIT_COUNT
+            && lunchboxQuantity + additionalLunchboxQuantity
+                <= DeliveryAssignmentCapacity.RECOMMENDED_LUNCHBOX_QUANTITY;
+    }
+
     public void add(Integer additionalLunchboxQuantity) {
         visitCount++;
         lunchboxQuantity += additionalLunchboxQuantity;

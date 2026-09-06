@@ -18,6 +18,17 @@ public interface RiderRepository extends JpaRepository<Rider, Long> {
 
     Optional<Rider> findByAuthUserId(Long authUserId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT r
+        FROM Rider r
+        WHERE r.authUserId = :authUserId
+            AND r.deletedAt IS NULL
+    """)
+    Optional<Rider> findByAuthUserIdForUpdate(
+        @Param("authUserId") Long authUserId
+    );
+
     List<Rider> findAllByDeletedAtIsNullOrderByIdAsc();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -111,6 +111,70 @@ public class DeliveryGroup {
         this.status = DeliveryGroupStatus.CONFIRMED;
     }
 
+    public boolean startExecution(
+        LocalDateTime startedAt
+    ) {
+        if (status == DeliveryGroupStatus.IN_PROGRESS) {
+            return false;
+        }
+
+        if (status != DeliveryGroupStatus.CONFIRMED) {
+            throw new IllegalStateException(
+                "Only confirmed delivery groups can start execution."
+            );
+        }
+
+        this.status = DeliveryGroupStatus.IN_PROGRESS;
+
+        if (actualStartedAt == null) {
+            this.actualStartedAt = startedAt;
+        }
+
+        return true;
+    }
+
+    public boolean finishExecution(
+        DeliveryGroupStatus finalStatus
+        , LocalDateTime finishedAt
+    ) {
+        validateFinalStatus(finalStatus);
+
+        if (status == finalStatus) {
+            return false;
+        }
+
+        if (
+            actualStartedAt != null
+                && finishedAt.isBefore(actualStartedAt)
+        ) {
+            throw new IllegalArgumentException(
+                "Delivery group finish time cannot be before start time."
+            );
+        }
+
+        this.status = finalStatus;
+
+        if (actualFinishedAt == null) {
+            this.actualFinishedAt = finishedAt;
+        }
+
+        return true;
+    }
+
+    private void validateFinalStatus(
+        DeliveryGroupStatus status
+    ) {
+        if (
+            status != DeliveryGroupStatus.COMPLETED
+                && status != DeliveryGroupStatus.COMPLETED_WITH_FAILURE
+                && status != DeliveryGroupStatus.FAILED
+        ) {
+            throw new IllegalArgumentException(
+                "Unsupported final delivery group status."
+            );
+        }
+    }
+
     public boolean isIssueReview() {
         return status == DeliveryGroupStatus.ISSUE_REVIEW;
     }

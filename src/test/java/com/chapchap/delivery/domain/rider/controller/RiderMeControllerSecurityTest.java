@@ -14,8 +14,15 @@ import com.chapchap.delivery.domain.assignment.service.RiderAssignmentAcknowledg
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentDetailService;
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentIssueService;
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentQueryService;
+import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
+import com.chapchap.delivery.domain.delivery.response.RiderDeliveryCompletionResponse;
+import com.chapchap.delivery.domain.delivery.response.RiderEmergencyDeliveryFailureResponse;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryStartService;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryCompletionService;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryFailureService;
+import com.chapchap.delivery.domain.delivery.service.RiderEmergencyDeliveryFailureService;
 import com.chapchap.delivery.domain.rider.constant.RiderScheduleSource;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleItemResponse;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleResponse;
@@ -31,9 +38,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -46,6 +55,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -82,12 +92,95 @@ class RiderMeControllerSecurityTest {
     @MockitoBean
     private RiderAssignmentDetailService riderAssignmentDetailService;
 
+    @MockitoBean
+    private RiderDeliveryStartService riderDeliveryStartService;
+
+    @MockitoBean
+    private RiderDeliveryCompletionService riderDeliveryCompletionService;
+
+    @MockitoBean
+    private RiderDeliveryFailureService riderDeliveryFailureService;
+
+    @MockitoBean
+    private RiderEmergencyDeliveryFailureService riderEmergencyDeliveryFailureService;
+
+    @Test
+    @DisplayName("기사 긴급 실패 API는 인증 정보가 없으면 거절한다")
+    void emergencyFailureReturnsUnauthorizedWithoutAuthentication() throws Exception {
+        mockMvc.perform(
+                post(
+                    "/api/delivery/rider/assignments/{assignmentId}/emergency-failures"
+                    , ASSIGNMENT_ID
+                )
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {
+                          "failureCode": "RIDER_ACCIDENT",
+                          "itemRecovered": false
+                        }
+                    """)
+            )
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value(ErrorCode.AUTHENTICATION_REQUIRED.getCode()));
+
+        verify(riderEmergencyDeliveryFailureService, never()).failRemaining(
+            any()
+            , any()
+            , any()
+        );
+    }
+
+    @Test
+    @DisplayName("기사는 자신의 확정 배정 남은 배송을 긴급 실패 처리할 수 있다")
+    void emergencyFailureReturnsSuccessForRider() throws Exception {
+        when(
+            riderEmergencyDeliveryFailureService.failRemaining(
+                eq(ACTOR_ID)
+                , eq(ASSIGNMENT_ID)
+                , any()
+            )
+        ).thenReturn(
+            new RiderEmergencyDeliveryFailureResponse(
+                ASSIGNMENT_ID
+                , 2
+                , List.of("delivery-1", "delivery-2")
+            )
+        );
+
+        mockMvc.perform(
+                post(
+                    "/api/delivery/rider/assignments/{assignmentId}/emergency-failures"
+                    , ASSIGNMENT_ID
+                )
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.RIDER.name())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {
+                          "failureCode": "RIDER_ACCIDENT",
+                          "itemRecovered": false
+                        }
+                    """)
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("00"))
+            .andExpect(jsonPath("$.data.assignmentId").value(ASSIGNMENT_ID))
+            .andExpect(jsonPath("$.data.failedCount").value(2))
+            .andExpect(jsonPath("$.data.deliveryIds.length()").value(2));
+
+        verify(riderEmergencyDeliveryFailureService).failRemaining(
+            eq(ACTOR_ID)
+            , eq(ASSIGNMENT_ID)
+            , any()
+        );
+    }
+
     @Test
     @DisplayName("인증 정보가 없으면 본인 실제 일정을 조회할 수 없다")
     void getMySchedulesReturnsUnauthorizedWithoutAuthentication() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/schedules")
+                get("/api/delivery/rider/schedules")
                     .param("dateFrom", "2026-08-24")
                     .param("dateTo", "2026-08-25")
             )
@@ -108,7 +201,7 @@ class RiderMeControllerSecurityTest {
     void getMySchedulesReturnsForbiddenForCustomer() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/schedules")
+                get("/api/delivery/rider/schedules")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.CUSTOMER.name())
                     .param("dateFrom", "2026-08-24")
@@ -131,7 +224,7 @@ class RiderMeControllerSecurityTest {
     void getMySchedulesReturnsForbiddenForAdmin() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/schedules")
+                get("/api/delivery/rider/schedules")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
                     .param("dateFrom", "2026-08-24")
@@ -185,7 +278,7 @@ class RiderMeControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/schedules")
+                get("/api/delivery/rider/schedules")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .param("dateFrom", "2026-08-24")
@@ -219,7 +312,7 @@ class RiderMeControllerSecurityTest {
     void getMySchedulesReturnsBadRequestWithoutDateFrom() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/schedules")
+                get("/api/delivery/rider/schedules")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .param("dateTo", "2026-08-25")
@@ -241,7 +334,7 @@ class RiderMeControllerSecurityTest {
     void getMySchedulesReturnsBadRequestWithoutDateTo() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/schedules")
+                get("/api/delivery/rider/schedules")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .param("dateFrom", "2026-08-24")
@@ -263,7 +356,7 @@ class RiderMeControllerSecurityTest {
     void getMySchedulesReturnsBadRequestForInvalidDateFormat() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/schedules")
+                get("/api/delivery/rider/schedules")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .param("dateFrom", "2026-08-XX")
@@ -286,7 +379,7 @@ class RiderMeControllerSecurityTest {
     void getMyAssignmentsReturnsUnauthorizedWithoutAuthentication() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/assignments")
+                get("/api/delivery/rider/assignments")
             )
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.code").value(ErrorCode.AUTHENTICATION_REQUIRED.getCode()))
@@ -306,7 +399,7 @@ class RiderMeControllerSecurityTest {
     void getMyAssignmentsReturnsForbiddenForCustomer() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/assignments")
+                get("/api/delivery/rider/assignments")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.CUSTOMER.name())
             )
@@ -328,7 +421,7 @@ class RiderMeControllerSecurityTest {
     void getMyAssignmentsReturnsForbiddenForAdmin() throws Exception {
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/assignments")
+                get("/api/delivery/rider/assignments")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
             )
@@ -392,7 +485,7 @@ class RiderMeControllerSecurityTest {
 
         // when & then
         mockMvc.perform(
-                get("/api/rider/me/assignments")
+                get("/api/delivery/rider/assignments")
                     .header("X-User-Id", ACTOR_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
                     .param("deliveryDate", "2026-09-05")
@@ -434,7 +527,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/acknowledgement"
+                    "/api/delivery/rider/assignments/{assignmentId}/acknowledgement"
                     , ASSIGNMENT_ID
                 )
             )
@@ -454,7 +547,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/acknowledgement"
+                    "/api/delivery/rider/assignments/{assignmentId}/acknowledgement"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -476,7 +569,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/acknowledgement"
+                    "/api/delivery/rider/assignments/{assignmentId}/acknowledgement"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -529,7 +622,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/acknowledgement"
+                    "/api/delivery/rider/assignments/{assignmentId}/acknowledgement"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -554,7 +647,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/issues"
+                    "/api/delivery/rider/assignments/{assignmentId}/issues"
                     , ASSIGNMENT_ID
                 )
                     .contentType(MediaType.APPLICATION_JSON)
@@ -583,7 +676,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/issues"
+                    "/api/delivery/rider/assignments/{assignmentId}/issues"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -614,7 +707,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/issues"
+                    "/api/delivery/rider/assignments/{assignmentId}/issues"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -697,7 +790,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 post(
-                    "/api/rider/me/assignments/{assignmentId}/issues"
+                    "/api/delivery/rider/assignments/{assignmentId}/issues"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -734,7 +827,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 get(
-                    "/api/rider/me/assignments/{assignmentId}"
+                    "/api/delivery/rider/assignments/{assignmentId}"
                     , ASSIGNMENT_ID
                 )
             )
@@ -754,7 +847,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 get(
-                    "/api/rider/me/assignments/{assignmentId}"
+                    "/api/delivery/rider/assignments/{assignmentId}"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -776,7 +869,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 get(
-                    "/api/rider/me/assignments/{assignmentId}"
+                    "/api/delivery/rider/assignments/{assignmentId}"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -835,7 +928,7 @@ class RiderMeControllerSecurityTest {
         // when & then
         mockMvc.perform(
                 get(
-                    "/api/rider/me/assignments/{assignmentId}"
+                    "/api/delivery/rider/assignments/{assignmentId}"
                     , ASSIGNMENT_ID
                 )
                     .header("X-User-Id", ACTOR_ID)
@@ -878,4 +971,70 @@ class RiderMeControllerSecurityTest {
             , ASSIGNMENT_ID
         );
     }
+    @Test
+    @DisplayName("기사 비대면 완료 API는 JSON 요청과 사진을 multipart로 함께 받는다")
+    void completionAcceptsMultipartRequestAndPhoto() throws Exception {
+        String deliveryId = "11111111-1111-1111-1111-111111111111";
+        MockMultipartFile requestPart = new MockMultipartFile(
+            "request"
+            , ""
+            , MediaType.APPLICATION_JSON_VALUE
+            , """
+                {
+                  "actualHandoffType": "DOORSTEP",
+                  "storageLocation": "현관문 앞"
+                }
+                """.getBytes(StandardCharsets.UTF_8)
+        );
+        MockMultipartFile photoPart = new MockMultipartFile(
+            "photo"
+            , "proof.jpg"
+            , "image/jpeg"
+            , new byte[]{1, 2, 3}
+        );
+
+        when(
+            riderDeliveryCompletionService.complete(
+                eq(ACTOR_ID)
+                , eq(deliveryId)
+                , any()
+                , any()
+            )
+        ).thenReturn(
+            new RiderDeliveryCompletionResponse(
+                deliveryId
+                , DeliveryStatus.DELIVERED
+                , 3
+                , ActualHandoffType.DOORSTEP
+                , OffsetDateTime.parse("2026-09-06T12:00:00+09:00")
+                , true
+                , false
+            )
+        );
+
+        mockMvc.perform(
+                multipart(
+                    "/api/delivery/rider/deliveries/{deliveryId}/complete"
+                    , deliveryId
+                )
+                    .file(requestPart)
+                    .file(photoPart)
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.RIDER.name())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("00"))
+            .andExpect(jsonPath("$.data.deliveryId").value(deliveryId))
+            .andExpect(jsonPath("$.data.status").value("DELIVERED"))
+            .andExpect(jsonPath("$.data.actualHandoffType").value("DOORSTEP"))
+            .andExpect(jsonPath("$.data.hasCompletionPhoto").value(true));
+
+        verify(riderDeliveryCompletionService).complete(
+            eq(ACTOR_ID)
+            , eq(deliveryId)
+            , any()
+            , any()
+        );
+    }
+
 }

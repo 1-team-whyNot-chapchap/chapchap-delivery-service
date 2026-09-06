@@ -13,6 +13,17 @@ import com.chapchap.delivery.domain.assignment.service.RiderAssignmentDetailServ
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentIssueService;
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentQueryService;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
+import com.chapchap.delivery.domain.delivery.response.RiderDeliveryStartResponse;
+import com.chapchap.delivery.domain.delivery.request.RiderDeliveryCompletionRequest;
+import com.chapchap.delivery.domain.delivery.request.RiderDeliveryFailureRequest;
+import com.chapchap.delivery.domain.delivery.response.RiderDeliveryCompletionResponse;
+import com.chapchap.delivery.domain.delivery.response.RiderDeliveryFailureResponse;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryCompletionService;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryFailureService;
+import com.chapchap.delivery.domain.delivery.request.RiderEmergencyDeliveryFailureRequest;
+import com.chapchap.delivery.domain.delivery.response.RiderEmergencyDeliveryFailureResponse;
+import com.chapchap.delivery.domain.delivery.service.RiderEmergencyDeliveryFailureService;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryStartService;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleResponse;
 import com.chapchap.delivery.domain.rider.service.RiderScheduleService;
 import com.chapchap.delivery.global.response.ApiResponse;
@@ -23,13 +34,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/rider/me")
+@RequestMapping("/api/delivery/rider")
 public class RiderMeController {
 
     private final RiderScheduleService riderScheduleService;
@@ -37,6 +55,10 @@ public class RiderMeController {
     private final RiderAssignmentIssueService riderAssignmentIssueService;
     private final RiderAssignmentQueryService riderAssignmentQueryService;
     private final RiderAssignmentDetailService riderAssignmentDetailService;
+    private final RiderDeliveryStartService riderDeliveryStartService;
+    private final RiderDeliveryCompletionService riderDeliveryCompletionService;
+    private final RiderDeliveryFailureService riderDeliveryFailureService;
+    private final RiderEmergencyDeliveryFailureService riderEmergencyDeliveryFailureService;
 
     @GetMapping("/schedules")
     @PreAuthorize("hasRole('RIDER')")
@@ -134,5 +156,73 @@ public class RiderMeController {
             );
 
         return ApiResponse.success(response);
+    }
+
+    @PostMapping("/deliveries/{deliveryId}/start")
+    @PreAuthorize("hasRole('RIDER')")
+    public ApiResponse<RiderDeliveryStartResponse> startDelivery(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+        , @PathVariable String deliveryId
+    ) {
+        RiderDeliveryStartResponse response =
+            riderDeliveryStartService.start(
+                authenticatedUser.userId()
+                , deliveryId
+            );
+
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping(
+        value = "/deliveries/{deliveryId}/complete"
+        , consumes = "multipart/form-data"
+    )
+    @PreAuthorize("hasRole('RIDER')")
+    public ApiResponse<RiderDeliveryCompletionResponse> completeDelivery(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+        , @PathVariable String deliveryId
+        , @Valid @RequestPart("request") RiderDeliveryCompletionRequest request
+        , @RequestPart(value = "photo", required = false) MultipartFile photo
+    ) {
+        return ApiResponse.success(
+            riderDeliveryCompletionService.complete(
+                authenticatedUser.userId()
+                , deliveryId
+                , request
+                , photo
+            )
+        );
+    }
+
+    @PostMapping("/deliveries/{deliveryId}/fail")
+    @PreAuthorize("hasRole('RIDER')")
+    public ApiResponse<RiderDeliveryFailureResponse> failDelivery(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+        , @PathVariable String deliveryId
+        , @Valid @RequestBody RiderDeliveryFailureRequest request
+    ) {
+        return ApiResponse.success(
+            riderDeliveryFailureService.fail(
+                authenticatedUser.userId()
+                , deliveryId
+                , request
+            )
+        );
+    }
+
+    @PostMapping("/assignments/{assignmentId}/emergency-failures")
+    @PreAuthorize("hasRole('RIDER')")
+    public ApiResponse<RiderEmergencyDeliveryFailureResponse> failRemainingDeliveries(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+        , @PathVariable Long assignmentId
+        , @Valid @RequestBody RiderEmergencyDeliveryFailureRequest request
+    ) {
+        return ApiResponse.success(
+            riderEmergencyDeliveryFailureService.failRemaining(
+                authenticatedUser.userId()
+                , assignmentId
+                , request
+            )
+        );
     }
 }

@@ -25,7 +25,7 @@ public class DeliveryRecipientSnapshot {
     @Column(name = "delivery_id")
     private Long deliveryId;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
     @MapsId
     @JoinColumn(
         name = "delivery_id"

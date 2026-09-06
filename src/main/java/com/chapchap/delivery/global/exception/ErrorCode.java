@@ -94,15 +94,20 @@ public enum ErrorCode {
         , "DELIVERY_015"
         , "완료 사진이 필요합니다."
     )
+    , INVALID_DELIVERY_PHOTO_INFO(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_016"
+        , "사진 정보가 올바르지 않습니다."
+    )
+    , DELIVERY_HANDOFF_INFO_REQUIRED(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_020"
+        , "전달 방식에 필요한 정보가 누락되었습니다."
+    )
     , DELIVERY_RESULT_NOT_CORRECTABLE(
         HttpStatus.BAD_REQUEST
         , "DELIVERY_023"
         , "정정할 수 없는 항목입니다."
-    )
-    , UNRESOLVED_ASSIGNMENT_ISSUE(
-        HttpStatus.CONFLICT
-        , "DELIVERY_014"
-        , "미해결 기사 이슈가 있습니다."
     )
     , ASSIGNMENT_CHANGE_NOT_ALLOWED(
         HttpStatus.CONFLICT

@@ -5,6 +5,11 @@ spring:
   application:
     name: chapchap-delivery-service
 
+  servlet:
+    multipart:
+      max-file-size: ${DELIVERY_PHOTO_MAX_FILE_SIZE:10MB}
+      max-request-size: ${DELIVERY_PHOTO_MAX_REQUEST_SIZE:11MB}
+
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${DB_USERNAME}
@@ -89,8 +94,18 @@ security:
     encryption-key: ${PERSONAL_DATA_ENCRYPTION_KEY}
 
 app:
+  storage:
+    delivery-photo:
+      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${MINIO_ACCESS_KEY}
+      secret-key: ${MINIO_SECRET_KEY}
+      bucket: ${MINIO_DELIVERY_PHOTO_BUCKET:delivery-photos}
+      presigned-url-minutes: ${DELIVERY_PHOTO_PRESIGNED_MINUTES:10}
+      max-file-size-bytes: ${DELIVERY_PHOTO_MAX_FILE_SIZE_BYTES:10485760}
+      allowed-content-types: ${DELIVERY_PHOTO_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/webp}
   kafka:
     topics:
       auth-user: ${KAFKA_TOPIC_AUTH_USER:auth.user-events.v1}
       delivery-event: ${KAFKA_TOPIC_DELIVERY_EVENT:delivery.delivery-events.v1}
+      delivery-refund-event: ${KAFKA_TOPIC_DELIVERY_REFUND_EVENT:delivery.refund-events.v1}
       operation-notification: ${KAFKA_TOPIC_OPERATION_NOTIFICATION:delivery.operation-notification-requests.v1}

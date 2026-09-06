@@ -43,7 +43,7 @@ class AdminDeliveryGroupControllerSecurityTest {
 
     @Test
     void rejectsUnauthenticatedManualAssignment() throws Exception {
-        mockMvc.perform(post("/api/admin/delivery-groups/{id}/manual-assignments", GROUP_ID)
+        mockMvc.perform(post("/api/delivery/admin/delivery-groups/{id}/manual-assignments", GROUP_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"assignments\":[]}"))
             .andExpect(status().isUnauthorized())
@@ -56,7 +56,7 @@ class AdminDeliveryGroupControllerSecurityTest {
     void adminCanRunAutoAssignment() throws Exception {
         when(adminAutoAssignmentService.assign(ACTOR_ID, UserRole.ADMIN, GROUP_ID)).thenReturn(true);
 
-        mockMvc.perform(post("/api/admin/delivery-groups/{id}/auto-assignment", GROUP_ID)
+        mockMvc.perform(post("/api/delivery/admin/delivery-groups/{id}/auto-assignment", GROUP_ID)
                 .header("X-User-Id", ACTOR_ID)
                 .header("X-User-Role", UserRole.ADMIN.name()))
             .andExpect(status().isOk())
@@ -71,7 +71,7 @@ class AdminDeliveryGroupControllerSecurityTest {
             new ManualAssignmentsResponse(GROUP_ID, DeliveryGroupStatus.WAITING_RIDER, List.of(30L))
         );
 
-        mockMvc.perform(post("/api/admin/delivery-groups/{id}/manual-assignments", GROUP_ID)
+        mockMvc.perform(post("/api/delivery/admin/delivery-groups/{id}/manual-assignments", GROUP_ID)
                 .header("X-User-Id", ACTOR_ID)
                 .header("X-User-Role", UserRole.ADMIN.name())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +91,7 @@ class AdminDeliveryGroupControllerSecurityTest {
             )
         );
 
-        mockMvc.perform(post("/api/admin/delivery-groups/{id}/confirmation", GROUP_ID)
+        mockMvc.perform(post("/api/delivery/admin/delivery-groups/{id}/confirmation", GROUP_ID)
                 .header("X-User-Id", ACTOR_ID)
                 .header("X-User-Role", UserRole.ADMIN.name()))
             .andExpect(status().isOk())
@@ -100,7 +100,7 @@ class AdminDeliveryGroupControllerSecurityTest {
 
     @Test
     void rejectsManualAssignmentWithInvalidDeliveryPublicId() throws Exception {
-        mockMvc.perform(post("/api/admin/delivery-groups/{id}/manual-assignments", GROUP_ID)
+        mockMvc.perform(post("/api/delivery/admin/delivery-groups/{id}/manual-assignments", GROUP_ID)
                 .header("X-User-Id", ACTOR_ID)
                 .header("X-User-Role", UserRole.ADMIN.name())
                 .contentType(MediaType.APPLICATION_JSON)

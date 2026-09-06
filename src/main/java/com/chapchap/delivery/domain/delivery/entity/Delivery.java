@@ -121,4 +121,54 @@ public class Delivery {
         this.status = DeliveryStatus.READY;
         this.deliveryVersion = 1;
     }
+
+    public void start() {
+        transition(
+            DeliveryStatus.READY
+            , DeliveryStatus.DELIVERING
+        );
+    }
+
+    public void complete() {
+        transition(
+            DeliveryStatus.DELIVERING
+            , DeliveryStatus.DELIVERED
+        );
+    }
+
+    public void fail() {
+        transition(
+            DeliveryStatus.DELIVERING
+            , DeliveryStatus.FAILED
+        );
+    }
+
+    public void failBeforeDeparture() {
+        transition(
+            DeliveryStatus.READY
+            , DeliveryStatus.FAILED
+        );
+    }
+
+    public boolean isFinished() {
+        return status == DeliveryStatus.DELIVERED
+            || status == DeliveryStatus.FAILED;
+    }
+
+    private void transition(
+        DeliveryStatus expectedStatus
+        , DeliveryStatus nextStatus
+    ) {
+        if (status != expectedStatus) {
+            throw new IllegalStateException(
+                "Invalid delivery status transition: "
+                    + status
+                    + " -> "
+                    + nextStatus
+            );
+        }
+
+        this.status = nextStatus;
+        this.deliveryVersion++;
+    }
 }
