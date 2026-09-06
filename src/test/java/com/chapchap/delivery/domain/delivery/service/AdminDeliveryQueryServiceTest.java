@@ -18,6 +18,7 @@ import com.chapchap.delivery.domain.delivery.entity.DeliverySlot;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryCompletion;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryCompletionPhoto;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryFailure;
+import com.chapchap.delivery.domain.delivery.entity.DeliveryResultCorrection;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryGroupStatus;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
@@ -25,6 +26,7 @@ import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryProcessedByType;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryResultType;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionPhotoRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionRepository;
@@ -34,6 +36,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRecipientSnapshotRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryStatusHistoryRepository;
+import com.chapchap.delivery.domain.delivery.repository.DeliveryResultCorrectionRepository;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryGroupDetailResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -73,6 +76,7 @@ class AdminDeliveryQueryServiceTest {
     @Mock private DeliveryCompletionPhotoRepository photoRepository;
     @Mock private DeliveryFailureRepository failureRepository;
     @Mock private DeliveryStatusHistoryRepository statusHistoryRepository;
+    @Mock private DeliveryResultCorrectionRepository correctionRepository;
     @Mock private RiderAssignmentEligibilityService eligibilityService;
 
     private AdminDeliveryQueryService service;
@@ -83,7 +87,7 @@ class AdminDeliveryQueryServiceTest {
             accessService, groupRepository, deliveryRepository, assignmentRepository,
             assignmentItemRepository, issueRepository, snapshotRepository, delayRepository,
             completionRepository, photoRepository, failureRepository, statusHistoryRepository,
-            eligibilityService
+            correctionRepository, eligibilityService
         );
     }
 
@@ -184,6 +188,55 @@ class AdminDeliveryQueryServiceTest {
         assertThat(response.failure().recoveredAt())
             .isEqualTo(OffsetDateTime.parse("2026-09-06T12:30:00+09:00"));
         assertThat(response.failure().adminReasonDetail()).isEqualTo("admin detail");
+    }
+
+
+    @Test
+    @DisplayName("관리자 배송 상세은 원본과 최신 유효 정정값을 함께 반환한다")
+    void returnsEffectiveCorrectedValuesAlongsideOriginals() {
+        DeliveryGroup group = group(1L, DeliverySlotCode.LUNCH);
+        Delivery delivery = mock(Delivery.class);
+        lenient().when(delivery.getId()).thenReturn(10L);
+        lenient().when(delivery.getDeliveryPublicId()).thenReturn("delivery-10");
+        lenient().when(delivery.getSourceOrderId()).thenReturn("order-10");
+        lenient().when(delivery.getCustomerId()).thenReturn(20L);
+        lenient().when(delivery.getDeliveryGroup()).thenReturn(group);
+        lenient().when(delivery.getStatus()).thenReturn(DeliveryStatus.DELIVERED);
+        lenient().when(delivery.getDeliveryVersion()).thenReturn(3);
+        lenient().when(delivery.getLunchboxQuantity()).thenReturn(2);
+
+        DeliveryCompletion completion = mock(DeliveryCompletion.class);
+        lenient().when(completion.getId()).thenReturn(30L);
+        lenient().when(completion.getActualHandoffType()).thenReturn(ActualHandoffType.DOORSTEP);
+        lenient().when(completion.getStorageLocation()).thenReturn("기존 위치");
+
+        DeliveryResultCorrection handoffCorrection = mock(DeliveryResultCorrection.class);
+        lenient().when(handoffCorrection.getResultType()).thenReturn(DeliveryResultType.COMPLETION);
+        lenient().when(handoffCorrection.getFieldName()).thenReturn("actual_handoff_type");
+        lenient().when(handoffCorrection.getAfterValue()).thenReturn("OTHER");
+        DeliveryResultCorrection locationCorrection = mock(DeliveryResultCorrection.class);
+        lenient().when(locationCorrection.getResultType()).thenReturn(DeliveryResultType.COMPLETION);
+        lenient().when(locationCorrection.getFieldName()).thenReturn("storage_location");
+        lenient().when(locationCorrection.getAfterValue()).thenReturn("정정 위치");
+
+        when(deliveryRepository.findDetailByDeliveryPublicId("delivery-10"))
+            .thenReturn(Optional.of(delivery));
+        when(delayRepository.findByDeliveryId(10L)).thenReturn(Optional.empty());
+        when(completionRepository.findByDeliveryId(10L)).thenReturn(Optional.of(completion));
+        when(failureRepository.findByDeliveryId(10L)).thenReturn(Optional.empty());
+        when(photoRepository.findByDeliveryCompletionId(30L)).thenReturn(Optional.empty());
+        when(statusHistoryRepository.findAllByDelivery_IdOrderByChangedAtAsc(10L))
+            .thenReturn(List.of());
+        when(assignmentRepository.findAllByDeliveryId(10L)).thenReturn(List.of());
+        when(correctionRepository.findAllByDelivery_IdOrderByIdAsc(10L))
+            .thenReturn(List.of(handoffCorrection, locationCorrection));
+
+        var response = service.getDelivery(7L, UserRole.ADMIN, "delivery-10");
+
+        assertThat(response.completion().actualHandoffType()).isEqualTo(ActualHandoffType.DOORSTEP);
+        assertThat(response.completion().storageLocation()).isEqualTo("기존 위치");
+        assertThat(response.completion().effectiveActualHandoffType()).isEqualTo(ActualHandoffType.OTHER);
+        assertThat(response.completion().effectiveStorageLocation()).isEqualTo("정정 위치");
     }
 
     @Test

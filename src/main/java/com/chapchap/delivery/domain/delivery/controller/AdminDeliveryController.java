@@ -2,13 +2,16 @@ package com.chapchap.delivery.domain.delivery.controller;
 
 import com.chapchap.delivery.domain.delivery.request.AdminDeliveryFailureRequest;
 import com.chapchap.delivery.domain.delivery.request.AdminDeliveryRecoveryRequest;
+import com.chapchap.delivery.domain.delivery.request.AdminDeliveryResultCorrectionRequest;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryRecoveryResponse;
+import com.chapchap.delivery.domain.delivery.response.AdminDeliveryResultCorrectionResponse;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryDetailResponse;
 import com.chapchap.delivery.domain.delivery.response.DeliveryPhotoAccessResponse;
 import com.chapchap.delivery.domain.delivery.response.RiderDeliveryFailureResponse;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryFailureService;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryRecoveryService;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryQueryService;
+import com.chapchap.delivery.domain.delivery.service.AdminDeliveryResultCorrectionService;
 import com.chapchap.delivery.domain.delivery.service.DeliveryPhotoAccessService;
 import com.chapchap.delivery.global.response.ApiResponse;
 import com.chapchap.delivery.global.security.AuthenticatedUser;
@@ -31,6 +34,7 @@ public class AdminDeliveryController {
     private final DeliveryPhotoAccessService photoAccessService;
     private final AdminDeliveryRecoveryService recoveryService;
     private final AdminDeliveryQueryService queryService;
+    private final AdminDeliveryResultCorrectionService correctionService;
 
     @GetMapping("/{deliveryId}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -85,5 +89,29 @@ public class AdminDeliveryController {
         return ApiResponse.success(
             failureService.fail(user.userId(), user.role(), deliveryId, request)
         );
+    }
+
+    @PostMapping("/{deliveryId}/completion-corrections")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<AdminDeliveryResultCorrectionResponse> correctCompletion(
+        @AuthenticationPrincipal AuthenticatedUser user
+        , @PathVariable String deliveryId
+        , @Valid @RequestBody AdminDeliveryResultCorrectionRequest request
+    ) {
+        return ApiResponse.success(correctionService.correctCompletion(
+            user.userId(), user.role(), deliveryId, request
+        ));
+    }
+
+    @PostMapping("/{deliveryId}/failure-corrections")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<AdminDeliveryResultCorrectionResponse> correctFailure(
+        @AuthenticationPrincipal AuthenticatedUser user
+        , @PathVariable String deliveryId
+        , @Valid @RequestBody AdminDeliveryResultCorrectionRequest request
+    ) {
+        return ApiResponse.success(correctionService.correctFailure(
+            user.userId(), user.role(), deliveryId, request
+        ));
     }
 }

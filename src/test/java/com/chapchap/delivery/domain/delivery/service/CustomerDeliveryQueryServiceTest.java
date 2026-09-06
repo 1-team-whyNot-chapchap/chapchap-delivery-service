@@ -16,6 +16,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionReposi
 import com.chapchap.delivery.domain.delivery.repository.DeliveryDelayRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryFailureRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
+import com.chapchap.delivery.domain.delivery.repository.DeliveryResultCorrectionRepository;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryInfoException;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +52,7 @@ class CustomerDeliveryQueryServiceTest {
     @Mock private DeliveryFailureRepository failureRepository;
     @Mock private DeliveryDelayRepository delayRepository;
     @Mock private DeliveryCompletionPhotoRepository photoRepository;
+    @Mock private DeliveryResultCorrectionRepository correctionRepository;
 
     private CustomerDeliveryQueryService service;
 
@@ -58,7 +60,7 @@ class CustomerDeliveryQueryServiceTest {
     void setUp() {
         service = new CustomerDeliveryQueryService(
             deliveryRepository, completionRepository, failureRepository,
-            delayRepository, photoRepository
+            delayRepository, photoRepository, correctionRepository
         );
     }
 

@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
     Optional<Delivery> findByDeliveryPublicId(String deliveryPublicId);
@@ -132,6 +133,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         JOIN FETCH d.deliveryGroup g
         JOIN FETCH g.slot s
         WHERE g.deliveryDate = :deliveryDate
+          AND g.deletedAt IS NULL
           AND s.code = :slotCode
           AND d.status IN :statuses
         ORDER BY d.id ASC
@@ -148,6 +150,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         JOIN FETCH d.deliveryGroup g
         JOIN FETCH g.slot s
         WHERE g.deliveryDate = :deliveryDate
+          AND g.deletedAt IS NULL
           AND s.code = :slotCode
           AND d.status IN :statuses
         ORDER BY d.id ASC
@@ -156,5 +159,20 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         @Param("deliveryDate") LocalDate deliveryDate
         , @Param("slotCode") DeliverySlotCode slotCode
         , @Param("statuses") List<DeliveryStatus> statuses
+    );
+
+    @Query("""
+        SELECT d
+        FROM Delivery d
+        JOIN FETCH d.deliveryGroup g
+        JOIN FETCH g.slot
+        WHERE g.deliveryDate = :deliveryDate
+          AND g.deletedAt IS NULL
+          AND d.createdAt > :cutoff
+        ORDER BY d.id ASC
+    """)
+    List<Delivery> findLateOrdersForNotification(
+        @Param("deliveryDate") LocalDate deliveryDate
+        , @Param("cutoff") LocalDateTime cutoff
     );
 }

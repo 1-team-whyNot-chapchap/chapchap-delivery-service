@@ -3,6 +3,7 @@ package com.chapchap.delivery.domain.delivery.service;
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
+import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
 import com.chapchap.delivery.domain.delivery.entity.Delivery;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryCompletion;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryCompletionPhoto;
@@ -13,6 +14,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionReposi
 import com.chapchap.delivery.domain.delivery.repository.DeliveryDelayRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryFailureRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
+import com.chapchap.delivery.domain.delivery.repository.DeliveryResultCorrectionRepository;
 import com.chapchap.delivery.domain.delivery.response.CustomerDeliveryDetailResponse;
 import com.chapchap.delivery.domain.delivery.response.CustomerDeliveryListItemResponse;
 import com.chapchap.delivery.domain.delivery.response.CustomerDeliveryListResponse;
@@ -44,6 +46,7 @@ public class CustomerDeliveryQueryService {
     private final DeliveryFailureRepository failureRepository;
     private final DeliveryDelayRepository delayRepository;
     private final DeliveryCompletionPhotoRepository photoRepository;
+    private final DeliveryResultCorrectionRepository correctionRepository;
 
     @Transactional(readOnly = true)
     public CustomerDeliveryListResponse getMyDeliveries(
@@ -91,6 +94,7 @@ public class CustomerDeliveryQueryService {
         DeliveryCompletion completion = data.completions().get(delivery.getId());
         DeliveryFailure failure = data.failures().get(delivery.getId());
         DeliveryDelay delay = data.delays().get(delivery.getId());
+        CompletionValues completionValues = completionValues(delivery.getId(), completion, data);
 
         return new CustomerDeliveryDetailResponse(
             delivery.getDeliveryPublicId()
@@ -101,9 +105,9 @@ public class CustomerDeliveryQueryService {
             , delay != null
             , delay == null ? null : delay.getDelayMinutes()
             , delivery.getRequestHandoffType()
-            , completion == null ? null : completion.getActualHandoffType()
+            , completionValues == null ? null : completionValues.handoffType()
             , completion == null ? null : toOffset(completion.getCompletedAt())
-            , completion == null ? null : completion.getStorageLocation()
+            , completionValues == null ? null : completionValues.storageLocation()
             , customerFailureMessage(failure)
             , completion != null && data.photoCompletionIds().containsKey(completion.getId())
             , new CustomerDeliveryDetailResponse.Menu(
@@ -119,6 +123,7 @@ public class CustomerDeliveryQueryService {
         , RelatedData data
     ) {
         DeliveryCompletion completion = data.completions().get(delivery.getId());
+        CompletionValues completionValues = completionValues(delivery.getId(), completion, data);
         return new CustomerDeliveryListItemResponse(
             delivery.getDeliveryPublicId()
             , delivery.getSourceOrderId()
@@ -127,7 +132,7 @@ public class CustomerDeliveryQueryService {
             , delivery.getStatus()
             , data.delays().containsKey(delivery.getId())
             , completion == null ? null : toOffset(completion.getCompletedAt())
-            , completion == null ? null : completion.getActualHandoffType()
+            , completionValues == null ? null : completionValues.handoffType()
             , completion != null && data.photoCompletionIds().containsKey(completion.getId())
         );
     }
@@ -153,7 +158,34 @@ public class CustomerDeliveryQueryService {
             ? Map.of()
             : photoRepository.findAllByDeliveryCompletionIdIn(completionIds).stream()
                 .collect(Collectors.toMap(p -> p.getDeliveryCompletion().getId(), Function.identity()));
-        return new RelatedData(completions, failures, delays, photos);
+        Map<Long, java.util.List<com.chapchap.delivery.domain.delivery.entity.DeliveryResultCorrection>>
+            corrections = correctionRepository.findAllByDelivery_IdInOrderByIdAsc(deliveryIds)
+                .stream().collect(Collectors.groupingBy(
+                    correction -> correction.getDelivery().getId()
+                ));
+        return new RelatedData(completions, failures, delays, photos, corrections);
+    }
+
+    private CompletionValues completionValues(
+        Long deliveryId, DeliveryCompletion completion, RelatedData data
+    ) {
+        if (completion == null) {
+            return null;
+        }
+        ActualHandoffType handoffType = completion.getActualHandoffType();
+        String storageLocation = completion.getStorageLocation();
+        for (var correction : data.corrections().getOrDefault(deliveryId, java.util.List.of())) {
+            if (correction.getResultType()
+                != com.chapchap.delivery.domain.delivery.constant.DeliveryResultType.COMPLETION) {
+                continue;
+            }
+            if ("actual_handoff_type".equals(correction.getFieldName())) {
+                handoffType = ActualHandoffType.valueOf(correction.getAfterValue());
+            } else if ("storage_location".equals(correction.getFieldName())) {
+                storageLocation = correction.getAfterValue();
+            }
+        }
+        return new CompletionValues(handoffType, storageLocation);
     }
 
     private String customerFailureMessage(DeliveryFailure failure) {
@@ -184,9 +216,15 @@ public class CustomerDeliveryQueryService {
         , Map<Long, DeliveryFailure> failures
         , Map<Long, DeliveryDelay> delays
         , Map<Long, DeliveryCompletionPhoto> photoCompletionIds
+        , Map<Long, java.util.List<com.chapchap.delivery.domain.delivery.entity.DeliveryResultCorrection>> corrections
     ) {
         static RelatedData empty() {
-            return new RelatedData(Map.of(), Map.of(), Map.of(), Map.of());
+            return new RelatedData(Map.of(), Map.of(), Map.of(), Map.of(), Map.of());
         }
+    }
+
+    private record CompletionValues(
+        ActualHandoffType handoffType, String storageLocation
+    ) {
     }
 }

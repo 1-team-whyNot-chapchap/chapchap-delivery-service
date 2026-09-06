@@ -11,7 +11,10 @@ import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentIssu
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentItemRepository;
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentRepository;
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentEligibilityService;
+import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryGroupStatus;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryResultType;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
 import com.chapchap.delivery.domain.delivery.entity.Delivery;
@@ -20,6 +23,7 @@ import com.chapchap.delivery.domain.delivery.entity.DeliveryDelay;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryFailure;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryStatusHistory;
+import com.chapchap.delivery.domain.delivery.entity.DeliveryResultCorrection;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionPhotoRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryDelayRepository;
@@ -28,6 +32,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRecipientSnapshotRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryStatusHistoryRepository;
+import com.chapchap.delivery.domain.delivery.repository.DeliveryResultCorrectionRepository;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryDetailResponse;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryGroupDetailResponse;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryGroupListItemResponse;
@@ -68,6 +73,7 @@ public class AdminDeliveryQueryService {
     private final DeliveryCompletionPhotoRepository photoRepository;
     private final DeliveryFailureRepository failureRepository;
     private final DeliveryStatusHistoryRepository statusHistoryRepository;
+    private final DeliveryResultCorrectionRepository correctionRepository;
     private final RiderAssignmentEligibilityService eligibilityService;
 
     @Transactional(readOnly = true)
@@ -168,6 +174,21 @@ public class AdminDeliveryQueryService {
         List<AdminDeliveryDetailResponse.AssignmentHistory> assignmentHistories =
             assignmentRepository.findAllByDeliveryId(delivery.getId()).stream()
                 .map(this::toAssignmentHistory).toList();
+        List<DeliveryResultCorrection> correctionEntities =
+            correctionRepository.findAllByDelivery_IdOrderByIdAsc(delivery.getId());
+        List<AdminDeliveryDetailResponse.ResultCorrection> corrections = correctionEntities.stream()
+            .map(correction -> new AdminDeliveryDetailResponse.ResultCorrection(
+                correction.getId(), correction.getResultType(), correction.getFieldName(),
+                correction.getBeforeValue(), correction.getAfterValue(),
+                correction.getReasonCode(), correction.getReasonDetail(),
+                correction.getCorrectedBy(), toOffset(correction.getCorrectedAt())
+            )).toList();
+        CompletionValues effectiveCompletion = effectiveCompletionValues(
+            completion, correctionEntities
+        );
+        FailureValues effectiveFailure = effectiveFailureValues(
+            failure, correctionEntities
+        );
 
         return new AdminDeliveryDetailResponse(
             delivery.getDeliveryPublicId()
@@ -188,6 +209,8 @@ public class AdminDeliveryQueryService {
             , completion == null ? null : new AdminDeliveryDetailResponse.Completion(
                 completion.getActualHandoffType()
                 , completion.getStorageLocation()
+                , effectiveCompletion.handoffType()
+                , effectiveCompletion.storageLocation()
                 , toOffset(completion.getContactAttemptedAt())
                 , completion.getContactResult()
                 , completion.getProcessedBy()
@@ -201,6 +224,8 @@ public class AdminDeliveryQueryService {
                 failure.getFailureStage()
                 , failure.getFailureCode()
                 , failure.getFailureDetail()
+                , effectiveFailure.failureCode()
+                , effectiveFailure.failureDetail()
                 , toOffset(failure.getContactAttemptedAt())
                 , failure.getContactResult()
                 , failure.getItemRecovered()
@@ -213,7 +238,55 @@ public class AdminDeliveryQueryService {
             )
             , statusHistories
             , assignmentHistories
+            , corrections
         );
+    }
+
+
+    private CompletionValues effectiveCompletionValues(
+        DeliveryCompletion completion
+        , List<DeliveryResultCorrection> corrections
+    ) {
+        if (completion == null) {
+            return null;
+        }
+
+        ActualHandoffType handoffType = completion.getActualHandoffType();
+        String storageLocation = completion.getStorageLocation();
+        for (DeliveryResultCorrection correction : corrections) {
+            if (correction.getResultType() != DeliveryResultType.COMPLETION) {
+                continue;
+            }
+            if ("actual_handoff_type".equals(correction.getFieldName())) {
+                handoffType = ActualHandoffType.valueOf(correction.getAfterValue());
+            } else if ("storage_location".equals(correction.getFieldName())) {
+                storageLocation = correction.getAfterValue();
+            }
+        }
+        return new CompletionValues(handoffType, storageLocation);
+    }
+
+    private FailureValues effectiveFailureValues(
+        DeliveryFailure failure
+        , List<DeliveryResultCorrection> corrections
+    ) {
+        if (failure == null) {
+            return null;
+        }
+
+        DeliveryFailureCode failureCode = failure.getFailureCode();
+        String failureDetail = failure.getFailureDetail();
+        for (DeliveryResultCorrection correction : corrections) {
+            if (correction.getResultType() != DeliveryResultType.FAILURE) {
+                continue;
+            }
+            if ("failure_code".equals(correction.getFieldName())) {
+                failureCode = DeliveryFailureCode.valueOf(correction.getAfterValue());
+            } else if ("failure_detail".equals(correction.getFieldName())) {
+                failureDetail = correction.getAfterValue();
+            }
+        }
+        return new FailureValues(failureCode, failureDetail);
     }
 
     private GroupData loadGroupData(Collection<DeliveryGroup> groups) {
@@ -414,6 +487,16 @@ public class AdminDeliveryQueryService {
         , java.util.function.Function<T, Long> keyMapper
     ) {
         return values.stream().collect(Collectors.groupingBy(keyMapper));
+    }
+
+    private record CompletionValues(
+        ActualHandoffType handoffType, String storageLocation
+    ) {
+    }
+
+    private record FailureValues(
+        DeliveryFailureCode failureCode, String failureDetail
+    ) {
     }
 
     private record GroupData(
