@@ -15,6 +15,10 @@ import com.chapchap.delivery.domain.assignment.service.RiderAssignmentAcknowledg
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentIssueService;
 import com.chapchap.delivery.domain.assignment.service.RiderAssignmentQueryService;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryStartService;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryCompletionService;
+import com.chapchap.delivery.domain.delivery.service.RiderDeliveryFailureService;
+import com.chapchap.delivery.domain.delivery.service.RiderEmergencyDeliveryFailureService;
 import com.chapchap.delivery.domain.rider.constant.RiderScheduleSource;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleItemResponse;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleResponse;
@@ -59,6 +63,18 @@ class RiderMeControllerTest {
 
     @Mock
     private RiderAssignmentQueryService riderAssignmentQueryService;
+
+    @Mock
+    private RiderDeliveryStartService riderDeliveryStartService;
+
+    @Mock
+    private RiderDeliveryCompletionService riderDeliveryCompletionService;
+
+    @Mock
+    private RiderDeliveryFailureService riderDeliveryFailureService;
+
+    @Mock
+    private RiderEmergencyDeliveryFailureService riderEmergencyDeliveryFailureService;
 
     @InjectMocks
     private RiderMeController riderMeController;
