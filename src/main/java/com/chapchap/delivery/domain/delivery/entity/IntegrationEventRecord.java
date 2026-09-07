@@ -117,6 +117,23 @@ public class IntegrationEventRecord {
         return record;
     }
 
+    public static IntegrationEventRecord consumeIgnored(
+        String eventId
+        , String eventType
+        , String aggregateType
+        , String aggregateId
+        , LocalDateTime occurredAt
+        , LocalDateTime processedAt
+        , String processingCode
+    ) {
+        IntegrationEventRecord record = consumeSuccess(
+            eventId, eventType, aggregateType, aggregateId, occurredAt, processedAt
+        );
+        record.status = IntegrationEventStatus.IGNORED;
+        record.errorCode = processingCode;
+        return record;
+    }
+
     public static IntegrationEventRecord publishSuccess(
         String eventId
         , String eventType

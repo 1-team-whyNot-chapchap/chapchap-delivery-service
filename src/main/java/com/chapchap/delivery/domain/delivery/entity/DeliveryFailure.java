@@ -1,5 +1,6 @@
 package com.chapchap.delivery.domain.delivery.entity;
 
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryProcessedByType;
@@ -52,8 +53,9 @@ public class DeliveryFailure {
     @Column(name = "contact_attempted_at")
     private LocalDateTime contactAttemptedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "contact_result", length = 30)
-    private String contactResult;
+    private ContactResult contactResult;
 
     @Column(name = "item_recovered", nullable = false)
     private Boolean itemRecovered;
@@ -87,7 +89,7 @@ public class DeliveryFailure {
         , DeliveryFailureCode failureCode
         , String failureDetail
         , LocalDateTime contactAttemptedAt
-        , String contactResult
+        , ContactResult contactResult
         , Boolean itemRecovered
         , LocalDateTime recoveredAt
         , Long processedBy
@@ -116,7 +118,7 @@ public class DeliveryFailure {
         , DeliveryFailureCode failureCode
         , String failureDetail
         , LocalDateTime contactAttemptedAt
-        , String contactResult
+        , ContactResult contactResult
         , Boolean itemRecovered
         , LocalDateTime recoveredAt
         , Long processedBy

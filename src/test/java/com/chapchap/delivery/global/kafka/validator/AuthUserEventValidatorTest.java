@@ -84,11 +84,12 @@ class AuthUserEventValidatorTest {
                 , "ADMIN_ACCOUNT_DISABLED"
                 , 9001L
                 , new AuthUserEvent.Data(
-                    null
+                    "ADMIN"
                     , null
                     , null
                     , null
                     , disabledAt
+                    , false
                 )
             );
 
@@ -98,6 +99,19 @@ class AuthUserEventValidatorTest {
                 , event
             )
         );
+    }
+
+    @Test
+    @DisplayName("ADMIN_ACCOUNT_ENABLED 이벤트의 ADMIN/접근 허용 계약을 검증한다")
+    void validateAdminAccountEnabledSuccess() {
+        AuthUserEvent event = createEvent(
+            "0198a904-6b41-7a2d-b036-49f20670e10c"
+            , "ADMIN_ACCOUNT_ENABLED"
+            , 9001L
+            , new AuthUserEvent.Data("ADMIN", null, null, null, null, true)
+        );
+
+        assertDoesNotThrow(() -> validator.validate("9001", event));
     }
 
     @Test
@@ -308,19 +322,20 @@ class AuthUserEventValidatorTest {
     }
 
     @Test
-    @DisplayName("ADMIN_ACCOUNT_DISABLED에 disabledAt이 없으면 실패한다")
-    void validateDisabledAtNullFail() {
+    @DisplayName("ADMIN_ACCOUNT_DISABLED의 accessAllowed가 false가 아니면 실패한다")
+    void validateDisabledAccessAllowedMismatchFail() {
         AuthUserEvent event =
             createEvent(
                 "0198a903-6b41-7a2d-b036-49f20670e10b"
                 , "ADMIN_ACCOUNT_DISABLED"
                 , 9001L
                 , new AuthUserEvent.Data(
-                    null
+                    "ADMIN"
                     , null
                     , null
                     , null
                     , null
+                    , true
                 )
             );
 

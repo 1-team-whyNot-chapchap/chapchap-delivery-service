@@ -3,6 +3,7 @@ package com.chapchap.delivery.domain.assignment.service;
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignment;
+import com.chapchap.delivery.domain.assignment.constant.ManualAssignmentReason;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignmentItem;
 import com.chapchap.delivery.domain.assignment.event.RiderAssignmentAvailableEvent;
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentItemRepository;
@@ -23,6 +24,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
 import com.chapchap.delivery.global.exception.business.DeliveryAssignmentStateConflictException;
+import com.chapchap.delivery.global.exception.business.OtherReasonDetailRequiredException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -78,7 +80,8 @@ class AdminManualAssignmentServiceTest {
             , UserRole.ADMIN
             , GROUP_ID
             , request(List.of(new AdminManualAssignmentItemRequest(
-                RIDER_ID, List.of(DELIVERY_PUBLIC_ID), false, null, null
+                RIDER_ID, List.of(DELIVERY_PUBLIC_ID), false,
+                ManualAssignmentReason.OPERATIONAL_ADJUSTMENT, null
             )))
         );
 
@@ -103,8 +106,14 @@ class AdminManualAssignmentServiceTest {
             , UserRole.ADMIN
             , GROUP_ID
             , request(List.of(
-                new AdminManualAssignmentItemRequest(RIDER_ID, List.of(DELIVERY_PUBLIC_ID), false, null, null),
-                new AdminManualAssignmentItemRequest(RIDER_ID, List.of(DELIVERY_PUBLIC_ID), false, null, null)
+                new AdminManualAssignmentItemRequest(
+                    RIDER_ID, List.of(DELIVERY_PUBLIC_ID), false,
+                    ManualAssignmentReason.OPERATIONAL_ADJUSTMENT, null
+                ),
+                new AdminManualAssignmentItemRequest(
+                    RIDER_ID, List.of(DELIVERY_PUBLIC_ID), false,
+                    ManualAssignmentReason.OPERATIONAL_ADJUSTMENT, null
+                )
             ))
         )).isInstanceOf(DeliveryAssignmentStateConflictException.class);
 
@@ -112,6 +121,19 @@ class AdminManualAssignmentServiceTest {
         verify(applicationEventPublisher, never()).publishEvent(
             any(RiderAssignmentAvailableEvent.class)
         );
+    }
+
+    @Test
+    void manualAssignmentOtherReasonRequiresDetail() {
+        assertThatThrownBy(() -> service().assign(
+            ACTOR_ID, UserRole.ADMIN, GROUP_ID,
+            request(List.of(new AdminManualAssignmentItemRequest(
+                RIDER_ID, List.of(DELIVERY_PUBLIC_ID), false,
+                ManualAssignmentReason.OTHER, "   "
+            )))
+        )).isInstanceOf(OtherReasonDetailRequiredException.class);
+
+        verify(deliveryGroupRepository, never()).findByIdForUpdate(any());
     }
 
     private AdminManualAssignmentService service() {

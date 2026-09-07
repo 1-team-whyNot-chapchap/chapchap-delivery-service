@@ -1,5 +1,6 @@
 package com.chapchap.delivery.domain.delivery.service;
 
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryFailureReasonException;
 import java.time.OffsetDateTime;
@@ -11,7 +12,7 @@ public class DeliveryFailureValidator {
         DeliveryFailureCode failureCode
         , String failureDetail
         , OffsetDateTime contactAttemptedAt
-        , String contactResult
+        , ContactResult contactResult
         , Boolean itemRecovered
         , OffsetDateTime recoveredAt
     ) {
@@ -26,12 +27,17 @@ public class DeliveryFailureValidator {
         if (failureCode == DeliveryFailureCode.CUSTOMER_UNAVAILABLE) {
             if (
                 contactAttemptedAt == null
-                    || isBlank(contactResult)
+                    || contactResult == null
                     || !Boolean.TRUE.equals(itemRecovered)
                     || recoveredAt == null
             ) {
                 throw new InvalidDeliveryFailureReasonException();
             }
+        }
+
+        if (failureCode == DeliveryFailureCode.CUSTOMER_REFUSED
+            && (contactAttemptedAt == null || contactResult != ContactResult.CONTACTED)) {
+            throw new InvalidDeliveryFailureReasonException();
         }
     }
 

@@ -82,7 +82,7 @@ public enum ErrorCode {
     , DELIVERY_GROUP_CONFIRMATION_CONDITION_NOT_MET(
         HttpStatus.CONFLICT
         , "DELIVERY_014"
-        , "관리자 최종 확정 조건을 충족하지 못했습니다."
+        , "최종 확정 조건을 충족하지 못했습니다. 배송 상세를 다시 확인해 주세요."
     )
     , DELIVERY_ALREADY_PROCESSED(
         HttpStatus.CONFLICT
@@ -109,6 +109,36 @@ public enum ErrorCode {
         , "DELIVERY_023"
         , "정정할 수 없는 항목입니다."
     )
+    , DELIVERY_RESULT_CORRECTION_NO_CHANGE(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_033"
+        , "현재 값과 동일하여 정정할 수 없습니다."
+    )
+    , INTERNAL_SERVICE_AUTHENTICATION_FAILED(
+        HttpStatus.UNAUTHORIZED
+        , "DELIVERY_034"
+        , "Internal Service 인증에 실패했습니다."
+    )
+    , CURRENT_DELIVERY_ACCESS_FORBIDDEN(
+        HttpStatus.FORBIDDEN
+        , "DELIVERY_035"
+        , "Current-State 조회 권한이 없습니다."
+    )
+    , CURRENT_DELIVERY_NOT_FOUND(
+        HttpStatus.NOT_FOUND
+        , "DELIVERY_036"
+        , "당일 대표 배송을 찾을 수 없습니다."
+    )
+    , CURRENT_DELIVERY_DATA_CONFLICT(
+        HttpStatus.CONFLICT
+        , "DELIVERY_037"
+        , "현재 배송 데이터의 정합성을 확인할 수 없습니다."
+    )
+    , INVALID_INTERNAL_SUBJECT(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_038"
+        , "Internal Subject 정보가 올바르지 않습니다."
+    )
     , ASSIGNMENT_CHANGE_NOT_ALLOWED(
         HttpStatus.CONFLICT
         , "DELIVERY_022"
@@ -116,12 +146,12 @@ public enum ErrorCode {
     )
     , INVALID_ASSIGNMENT_ISSUE_REASON(
         HttpStatus.BAD_REQUEST
-        , "COMMON_001"
+        , "DELIVERY_030"
         , "기사 이슈 사유가 올바르지 않습니다."
     )
     , INVALID_DELIVERY_FAILURE_REASON(
         HttpStatus.BAD_REQUEST
-        , "COMMON_001"
+        , "DELIVERY_031"
         , "배송 실패 사유가 올바르지 않습니다."
     )
     , OPTIMISTIC_LOCK_CONFLICT(
@@ -131,7 +161,7 @@ public enum ErrorCode {
     )
     , KAFKA_EVENT_PUBLISH_FAILED(
         HttpStatus.INTERNAL_SERVER_ERROR
-        , "COMMON_002"
+        , "DELIVERY_032"
         , "Kafka 이벤트 발행에 실패했습니다."
     )
     , RIDER_NOT_FOUND(

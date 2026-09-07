@@ -98,7 +98,7 @@ class AdminDeliveryGroupControllerSecurityTest {
                 .header("X-User-Role", UserRole.ADMIN.name())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"assignments":[{"riderId":20,"deliveryIds":["0198c004-1000-7000-8000-000000000901"],"areaException":false}]}
+                    {"assignments":[{"riderId":20,"deliveryIds":["0198c004-1000-7000-8000-000000000901"],"areaException":false,"reasonCode":"OPERATIONAL_ADJUSTMENT"}]}
                     """))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.data.status").value("WAITING_RIDER"));

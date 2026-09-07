@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RiderAssignmentNotificationServiceTest {
-    private static final String TOPIC = "delivery.operation-notification-requests.v1";
+    private static final String TOPIC = "msa4-team1.delivery.operation-notification-requests.v1";
 
     @Mock private DeliveryAssignmentRepository deliveryAssignmentRepository;
     @Mock private IntegrationEventRecordRepository integrationEventRecordRepository;

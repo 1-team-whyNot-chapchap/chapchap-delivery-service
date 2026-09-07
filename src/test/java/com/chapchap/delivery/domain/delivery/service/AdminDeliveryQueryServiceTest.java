@@ -23,6 +23,7 @@ import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryGroupStatus;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
 import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryProcessedByType;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
@@ -149,7 +150,7 @@ class AdminDeliveryQueryServiceTest {
         lenient().when(completion.getActualHandoffType()).thenReturn(ActualHandoffType.DIRECT);
         lenient().when(completion.getStorageLocation()).thenReturn("front");
         lenient().when(completion.getContactAttemptedAt()).thenReturn(LocalDateTime.of(2026, 9, 6, 12, 0));
-        lenient().when(completion.getContactResult()).thenReturn("CONNECTED");
+        lenient().when(completion.getContactResult()).thenReturn(ContactResult.CONTACTED);
         lenient().when(completion.getProcessedBy()).thenReturn(40L);
         lenient().when(completion.getProcessedByType()).thenReturn(DeliveryProcessedByType.ADMIN);
         lenient().when(completion.getAdminReasonCode()).thenReturn("DEVICE_FAILURE");
@@ -160,7 +161,7 @@ class AdminDeliveryQueryServiceTest {
         lenient().when(failure.getFailureCode()).thenReturn(DeliveryFailureCode.VEHICLE_ISSUE);
         lenient().when(failure.getFailureDetail()).thenReturn("failure detail");
         lenient().when(failure.getContactAttemptedAt()).thenReturn(LocalDateTime.of(2026, 9, 6, 12, 20));
-        lenient().when(failure.getContactResult()).thenReturn("NO_ANSWER");
+        lenient().when(failure.getContactResult()).thenReturn(ContactResult.NO_ANSWER);
         lenient().when(failure.getItemRecovered()).thenReturn(true);
         lenient().when(failure.getRecoveredAt()).thenReturn(LocalDateTime.of(2026, 9, 6, 12, 30));
         lenient().when(failure.getProcessedBy()).thenReturn(41L);
@@ -181,10 +182,10 @@ class AdminDeliveryQueryServiceTest {
 
         var response = service.getDelivery(7L, UserRole.ADMIN, "delivery-10");
 
-        assertThat(response.completion().contactResult()).isEqualTo("CONNECTED");
+        assertThat(response.completion().contactResult()).isEqualTo(ContactResult.CONTACTED);
         assertThat(response.completion().adminReasonDetail()).isEqualTo("detail");
         assertThat(response.completion().hasCompletionPhoto()).isTrue();
-        assertThat(response.failure().contactResult()).isEqualTo("NO_ANSWER");
+        assertThat(response.failure().contactResult()).isEqualTo(ContactResult.NO_ANSWER);
         assertThat(response.failure().recoveredAt())
             .isEqualTo(OffsetDateTime.parse("2026-09-06T12:30:00+09:00"));
         assertThat(response.failure().adminReasonDetail()).isEqualTo("admin detail");

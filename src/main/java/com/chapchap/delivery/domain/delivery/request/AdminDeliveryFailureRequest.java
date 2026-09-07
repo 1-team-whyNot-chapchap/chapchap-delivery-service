@@ -1,8 +1,9 @@
 package com.chapchap.delivery.domain.delivery.request;
 
+import com.chapchap.delivery.domain.delivery.constant.AdminDeliveryFailureReason;
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
@@ -12,10 +13,10 @@ public record AdminDeliveryFailureRequest(
     , @NotNull DeliveryFailureCode failureCode
     , @Size(max = 500) String failureDetail
     , OffsetDateTime contactAttemptedAt
-    , @Size(max = 30) String contactResult
+    , ContactResult contactResult
     , @NotNull Boolean itemRecovered
     , OffsetDateTime recoveredAt
-    , @NotBlank @Size(max = 32) String adminReasonCode
+    , @NotNull AdminDeliveryFailureReason adminReasonCode
     , @Size(max = 500) String adminReasonDetail
 ) {
 }

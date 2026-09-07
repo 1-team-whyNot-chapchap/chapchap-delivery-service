@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class DeliveryAccessService {
@@ -24,14 +22,9 @@ public class DeliveryAccessService {
             throw new DeliveryAccessForbiddenException();
         }
 
-        Optional<DeliveryAccessProfile> profileOptional =
-            deliveryAccessProfileRepository.findByAuthUserId(authUserId);
-
-        if (profileOptional.isEmpty()) {
-            return;
-        }
-
-        DeliveryAccessProfile profile = profileOptional.get();
+        DeliveryAccessProfile profile =
+            deliveryAccessProfileRepository.findByAuthUserId(authUserId)
+                .orElseThrow(DeliveryAccessForbiddenException::new);
 
         if (
             profile.getLastRole() != UserRole.ADMIN

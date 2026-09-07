@@ -7,4 +7,9 @@ public enum RiderDeliveryActiveReason {
     , OPERATIONAL_HOLD
     , RESUME_DELIVERY
     , OTHER
+    ;
+
+    public boolean requiresDetail() {
+        return this == OTHER;
+    }
 }

@@ -6,4 +6,9 @@ public enum RiderScheduleExceptionReason {
     , TRAINING
     , SUBSTITUTE_WORK
     , OTHER
+    ;
+
+    public boolean requiresDetail() {
+        return this == OTHER;
+    }
 }

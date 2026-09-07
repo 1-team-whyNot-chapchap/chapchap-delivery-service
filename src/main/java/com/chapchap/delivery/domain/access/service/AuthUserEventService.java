@@ -35,6 +35,9 @@ public class AuthUserEventService {
     private static final String ADMIN_ACCOUNT_DISABLED =
         "ADMIN_ACCOUNT_DISABLED";
 
+    private static final String ADMIN_ACCOUNT_ENABLED =
+        "ADMIN_ACCOUNT_ENABLED";
+
     private final DeliveryAccessProfileRepository
         deliveryAccessProfileRepository;
 
@@ -92,8 +95,8 @@ public class AuthUserEventService {
                     , occurredAt
                 );
 
-            case ADMIN_ACCOUNT_DISABLED ->
-                handleAdminAccountDisabled(
+            case ADMIN_ACCOUNT_ENABLED, ADMIN_ACCOUNT_DISABLED ->
+                handleAdminAccountState(
                     event
                     , profileOptional
                     , occurredAt
@@ -168,7 +171,7 @@ public class AuthUserEventService {
         );
     }
 
-    private void handleAdminAccountDisabled(
+    private void handleAdminAccountState(
         AuthUserEvent event
         , Optional<DeliveryAccessProfile> profileOptional
         , LocalDateTime occurredAt
@@ -179,7 +182,7 @@ public class AuthUserEventService {
 
             profile.updateAuthState(
                 UserRole.ADMIN
-                , false
+                , event.data().accessAllowed()
                 , occurredAt
             );
 
@@ -190,7 +193,7 @@ public class AuthUserEventService {
             new DeliveryAccessProfile(
                 event.userId()
                 , UserRole.ADMIN
-                , false
+                , event.data().accessAllowed()
                 , occurredAt
             );
 

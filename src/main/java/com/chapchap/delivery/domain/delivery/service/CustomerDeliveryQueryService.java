@@ -87,7 +87,7 @@ public class CustomerDeliveryQueryService {
             .orElseThrow(DeliveryNotFoundException::new);
 
         if (!delivery.getCustomerId().equals(customerId)) {
-            throw new DeliveryAccessForbiddenException();
+            throw new DeliveryNotFoundException();
         }
 
         RelatedData data = loadRelatedData(java.util.List.of(delivery));
@@ -192,7 +192,7 @@ public class CustomerDeliveryQueryService {
         if (failure == null) {
             return null;
         }
-        return "배송을 완료하지 못했습니다. 고객센터로 문의해 주세요.";
+        return "배송을 완료하지 못했습니다. 해당 배송 회차는 환불 대상입니다.";
     }
 
     private void validateCustomer(UserRole role) {

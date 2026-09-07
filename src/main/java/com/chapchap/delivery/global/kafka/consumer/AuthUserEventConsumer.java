@@ -1,6 +1,7 @@
 package com.chapchap.delivery.global.kafka.consumer;
 
 import com.chapchap.delivery.domain.access.service.AuthUserEventService;
+import com.chapchap.delivery.domain.delivery.service.IntegrationEventIgnoreService;
 import com.chapchap.delivery.global.kafka.event.AuthUserEvent;
 import com.chapchap.delivery.global.kafka.validator.AuthUserEventValidator;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class AuthUserEventConsumer {
     private final AuthUserEventValidator validator;
     private final AuthUserEventService authUserEventService;
+    private final IntegrationEventIgnoreService ignoreService;
 
     @KafkaListener(
         topics = "${kafka.topic.auth-user-events}"
@@ -27,6 +29,13 @@ public class AuthUserEventConsumer {
         validator.validate(messageKey, event);
 
         if (!validator.supports(event)) {
+            ignoreService.ignore(
+                event.eventId()
+                , event.eventType()
+                , "AUTH_USER"
+                , String.valueOf(event.userId())
+                , event.occurredAt()
+            );
             return;
         }
 

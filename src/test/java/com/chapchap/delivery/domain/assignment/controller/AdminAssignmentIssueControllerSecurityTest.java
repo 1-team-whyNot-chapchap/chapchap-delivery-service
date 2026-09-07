@@ -1,6 +1,7 @@
 package com.chapchap.delivery.domain.assignment.controller;
 
 import com.chapchap.delivery.domain.access.constant.UserRole;
+import com.chapchap.delivery.domain.assignment.constant.AssignmentReassignmentReason;
 import com.chapchap.delivery.domain.assignment.service.AdminAssignmentIssueReassignService;
 import com.chapchap.delivery.domain.assignment.service.AdminAssignmentIssueRejectService;
 import com.chapchap.delivery.global.exception.ErrorCode;
@@ -389,7 +390,7 @@ class AdminAssignmentIssueControllerSecurityTest {
                 , UserRole.ADMIN
                 , ISSUE_ID
                 , newRiderId
-                , "OTHER"
+                , AssignmentReassignmentReason.OTHER
                 , "차량 사용 불가로 다른 기사에게 재배정합니다."
             );
     }

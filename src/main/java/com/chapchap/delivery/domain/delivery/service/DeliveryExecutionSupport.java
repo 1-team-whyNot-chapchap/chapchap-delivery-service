@@ -10,7 +10,7 @@ import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryGroupStatusHistory;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupStatusHistoryRepository;
 import com.chapchap.delivery.domain.rider.entity.Rider;
-import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
+import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryStateConflictException;
 import org.springframework.stereotype.Component;
 
@@ -37,13 +37,26 @@ public class DeliveryExecutionSupport {
                 item ->
                     item.getDelivery().getId().equals(delivery.getId())
                         && item.getAssignment().getRider().getId().equals(rider.getId())
-                        && item.getAssignment().getStatus()
-                        == DeliveryAssignmentStatus.CONFIRMED
+                        && isExecutionAssignment(item, delivery)
             );
 
         if (!assigned) {
-            throw new DeliveryAccessForbiddenException();
+            throw new DeliveryNotFoundException();
         }
+    }
+
+    private boolean isExecutionAssignment(
+        DeliveryAssignmentItem item
+        , Delivery delivery
+    ) {
+        DeliveryAssignmentStatus status = item.getAssignment().getStatus();
+        if (status == DeliveryAssignmentStatus.CONFIRMED) {
+            return true;
+        }
+        DeliveryGroupStatus groupStatus = delivery.getDeliveryGroup().getStatus();
+        return status == DeliveryAssignmentStatus.ACKNOWLEDGED
+            && (groupStatus == DeliveryGroupStatus.CONFIRMED
+                || groupStatus == DeliveryGroupStatus.IN_PROGRESS);
     }
 
     public void recalculateGroup(

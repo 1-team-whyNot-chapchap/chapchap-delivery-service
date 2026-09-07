@@ -15,10 +15,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DeliveryQuerySoftDeleteConditionTest {
 
     @Test
-    @DisplayName("고객 목록·상세 쿼리는 삭제된 전체 배송을 제외한다")
-    void customerQueriesExcludeDeletedDeliveryGroups() {
+    @DisplayName("고객 목록·상세 쿼리는 삭제된 배송과 전체 배송을 제외한다")
+    void customerQueriesExcludeDeletedDeliveriesAndGroups() {
+        assertQueryContains(DeliveryRepository.class, "findAllForCustomer", "d.deletedAt IS NULL");
         assertQueryContains(DeliveryRepository.class, "findAllForCustomer", "g.deletedAt IS NULL");
+        assertQueryContains(DeliveryRepository.class, "findDetailByDeliveryPublicId", "d.deletedAt IS NULL");
         assertQueryContains(DeliveryRepository.class, "findDetailByDeliveryPublicId", "g.deletedAt IS NULL");
+    }
+
+    @Test
+    @DisplayName("Current-State 쿼리는 삭제된 배송과 전체 배송을 제외한다")
+    void currentStateQueryExcludesDeletedDeliveriesAndGroups() {
+        assertQueryContains(DeliveryRepository.class, "findAllForCurrentState", "d.deletedAt IS NULL");
+        assertQueryContains(DeliveryRepository.class, "findAllForCurrentState", "g.deletedAt IS NULL");
+    }
+
+    @Test
+    @DisplayName("결과 정정 잠금 쿼리는 삭제된 배송과 부모 전체 배송을 제외한다")
+    void correctionLockQueryExcludesDeletedDeliveriesAndGroups() {
+        assertQueryContains(
+            DeliveryRepository.class, "findByDeliveryPublicIdForUpdate", "d.deletedAt IS NULL"
+        );
+        assertQueryContains(
+            DeliveryRepository.class, "findByDeliveryPublicIdForUpdate", "g.deletedAt IS NULL"
+        );
     }
 
     @Test
@@ -60,12 +80,37 @@ class DeliveryQuerySoftDeleteConditionTest {
         assertQueryContains(
             DeliveryRepository.class,
             "findUnresolvedByDeliveryDateAndSlot",
+            "d.deletedAt IS NULL"
+        );
+        assertQueryContains(
+            DeliveryRepository.class,
+            "findUnresolvedByDeliveryDateAndSlot",
             "g.deletedAt IS NULL"
+        );
+        assertQueryContains(
+            DeliveryRepository.class,
+            "findLateOrdersForNotification",
+            "d.deletedAt IS NULL"
         );
         assertQueryContains(
             DeliveryAssignmentIssueRepository.class,
             "findAllUnresolvedForNotification",
             "deliveryGroup.deletedAt IS NULL"
+        );
+    }
+
+    @Test
+    @DisplayName("지연 감지용 미종결 쿼리는 삭제된 배송과 전체 배송을 제외한다")
+    void delayQueryExcludesDeletedDeliveriesAndGroups() {
+        assertQueryContains(
+            DeliveryRepository.class,
+            "findUnfinishedByDeliveryDateAndSlotForUpdate",
+            "d.deletedAt IS NULL"
+        );
+        assertQueryContains(
+            DeliveryRepository.class,
+            "findUnfinishedByDeliveryDateAndSlotForUpdate",
+            "g.deletedAt IS NULL"
         );
     }
 

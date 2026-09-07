@@ -359,7 +359,7 @@ public class RiderDeliveryCompletionService {
             requestedHandoffType == RequestHandoffType.DIRECT
                 && (
                     request.contactAttemptedAt() == null
-                        || isBlank(request.contactResult())
+                        || request.contactResult() == null
                 )
         ) {
             throw new DeliveryHandoffInfoRequiredException();

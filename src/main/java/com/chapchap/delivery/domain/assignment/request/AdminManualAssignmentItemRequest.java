@@ -1,5 +1,6 @@
 package com.chapchap.delivery.domain.assignment.request;
 
+import com.chapchap.delivery.domain.assignment.constant.ManualAssignmentReason;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,7 +20,7 @@ public record AdminManualAssignmentItemRequest(
         String
     > deliveryIds
     , boolean areaException
-    , @Size(max = 32) String reasonCode
+    , @NotNull ManualAssignmentReason reasonCode
     , @Size(max = 500) String reasonDetail
 ) {
 }

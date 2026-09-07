@@ -21,6 +21,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryResultCorrectionRepository;
 import com.chapchap.delivery.domain.delivery.request.AdminDeliveryResultCorrectionRequest;
 import com.chapchap.delivery.global.exception.business.DeliveryResultNotCorrectableException;
+import com.chapchap.delivery.global.exception.business.DeliveryResultCorrectionNoChangeException;
 import com.chapchap.delivery.global.exception.business.OtherReasonDetailRequiredException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,7 +102,11 @@ class AdminDeliveryResultCorrectionServiceTest {
         assertThatThrownBy(() -> service.correctCompletion(
             7L, UserRole.ADMIN, "delivery-1",
             request("storage_location", "같은 위치", DeliveryResultCorrectionReason.DATA_ENTRY_ERROR, null)
-        )).isInstanceOf(DeliveryResultNotCorrectableException.class);
+        )).isInstanceOf(DeliveryResultCorrectionNoChangeException.class)
+            .extracting(exception ->
+                ((DeliveryResultCorrectionNoChangeException) exception).getErrorCode().getCode()
+            )
+            .isEqualTo("DELIVERY_033");
 
         verify(correctionRepository, never()).saveAll(anyList());
     }
@@ -143,7 +148,7 @@ class AdminDeliveryResultCorrectionServiceTest {
         assertThatThrownBy(() -> service.correctFailure(
             7L, UserRole.ADMIN, "delivery-1",
             request("failure_detail", "   ", DeliveryResultCorrectionReason.DATA_ENTRY_ERROR, null)
-        )).isInstanceOf(DeliveryResultNotCorrectableException.class);
+        )).isInstanceOf(DeliveryResultCorrectionNoChangeException.class);
 
         verify(correctionRepository, never()).saveAll(anyList());
     }

@@ -2,29 +2,32 @@ package com.chapchap.delivery.domain.delivery.service;
 
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
-import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentStatus;
-import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignment;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignmentItem;
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentItemRepository;
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentRepository;
 import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.AdminDeliveryFailureReason;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryChangedByType;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryProcessedByType;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryRecoveryResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryRefundReason;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
+import com.chapchap.delivery.domain.delivery.constant.RequestHandoffType;
 import com.chapchap.delivery.domain.delivery.entity.Delivery;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryAdminRecovery;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryCompletion;
+import com.chapchap.delivery.domain.delivery.entity.DeliveryCompletionPhoto;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryFailure;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryStatusHistory;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryAdminRecoveryRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionRepository;
+import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionPhotoRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryFailureRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
+import com.chapchap.delivery.domain.delivery.repository.DeliveryRecipientSnapshotRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryStatusHistoryRepository;
 import com.chapchap.delivery.domain.delivery.request.AdminDeliveryRecoveryRequest;
 import com.chapchap.delivery.domain.delivery.request.RiderDeliveryCompletionRequest;
@@ -32,7 +35,6 @@ import com.chapchap.delivery.domain.delivery.request.RiderDeliveryFailureRequest
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryRecoveryResponse;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
-import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
 import com.chapchap.delivery.global.exception.business.DeliveryHandoffInfoRequiredException;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryStateConflictException;
@@ -45,9 +47,13 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 public class AdminDeliveryRecoveryService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
@@ -60,8 +66,10 @@ public class AdminDeliveryRecoveryService {
     private final DeliveryAssignmentItemRepository assignmentItemRepository;
     private final DeliveryAdminRecoveryRepository recoveryRepository;
     private final DeliveryCompletionRepository completionRepository;
+    private final DeliveryCompletionPhotoRepository photoRepository;
     private final DeliveryFailureRepository failureRepository;
     private final DeliveryStatusHistoryRepository historyRepository;
+    private final DeliveryRecipientSnapshotRepository recipientRepository;
     private final DeliveryExecutionSupport executionSupport;
     private final DeliveryFailureValidator failureValidator;
     private final DeliveryRefundReasonResolver refundReasonResolver;
@@ -69,6 +77,7 @@ public class AdminDeliveryRecoveryService {
     private final DeliveryEventRequestPublisher eventPublisher;
     private final EntityManager entityManager;
     private final TransactionTemplate transactionTemplate;
+    private final DeliveryPhotoFileService photoFileService;
 
     public AdminDeliveryRecoveryService(
         DeliveryAccessService accessService
@@ -79,8 +88,10 @@ public class AdminDeliveryRecoveryService {
         , DeliveryAssignmentItemRepository assignmentItemRepository
         , DeliveryAdminRecoveryRepository recoveryRepository
         , DeliveryCompletionRepository completionRepository
+        , DeliveryCompletionPhotoRepository photoRepository
         , DeliveryFailureRepository failureRepository
         , DeliveryStatusHistoryRepository historyRepository
+        , DeliveryRecipientSnapshotRepository recipientRepository
         , DeliveryExecutionSupport executionSupport
         , DeliveryFailureValidator failureValidator
         , DeliveryRefundReasonResolver refundReasonResolver
@@ -88,6 +99,7 @@ public class AdminDeliveryRecoveryService {
         , DeliveryEventRequestPublisher eventPublisher
         , EntityManager entityManager
         , TransactionTemplate transactionTemplate
+        , DeliveryPhotoFileService photoFileService
     ) {
         this.accessService = accessService;
         this.deliveryRepository = deliveryRepository;
@@ -97,8 +109,10 @@ public class AdminDeliveryRecoveryService {
         this.assignmentItemRepository = assignmentItemRepository;
         this.recoveryRepository = recoveryRepository;
         this.completionRepository = completionRepository;
+        this.photoRepository = photoRepository;
         this.failureRepository = failureRepository;
         this.historyRepository = historyRepository;
+        this.recipientRepository = recipientRepository;
         this.executionSupport = executionSupport;
         this.failureValidator = failureValidator;
         this.refundReasonResolver = refundReasonResolver;
@@ -106,6 +120,7 @@ public class AdminDeliveryRecoveryService {
         this.eventPublisher = eventPublisher;
         this.entityManager = entityManager;
         this.transactionTemplate = transactionTemplate;
+        this.photoFileService = photoFileService;
     }
 
     public AdminDeliveryRecoveryResponse recover(
@@ -113,51 +128,56 @@ public class AdminDeliveryRecoveryService {
         , UserRole role
         , String deliveryPublicId
         , AdminDeliveryRecoveryRequest request
+        , MultipartFile photo
     ) {
         accessService.validateAdminAccess(adminId, role);
-        validateRequest(request);
+        validateRequest(request, photo);
 
-        return java.util.Objects.requireNonNull(
-            transactionTemplate.execute(
-                status -> recoverInTransaction(
-                    adminId
-                    , deliveryPublicId
-                    , request
+        DeliveryPhotoFileService.StoredPhoto storedPhoto = null;
+        if (
+            request.recoveryResult() == DeliveryRecoveryResult.DELIVERED
+                && request.completion().actualHandoffType() != ActualHandoffType.DIRECT
+        ) {
+            transactionTemplate.executeWithoutResult(
+                status -> preparePhotoRecoveryInTransaction(deliveryPublicId, request)
+            );
+            storedPhoto = photoFileService.store(deliveryPublicId, adminId, photo);
+        }
+
+        try {
+            DeliveryPhotoFileService.StoredPhoto finalStoredPhoto = storedPhoto;
+            return Objects.requireNonNull(
+                transactionTemplate.execute(
+                    status -> recoverInTransaction(
+                        adminId
+                        , deliveryPublicId
+                        , request
+                        , finalStoredPhoto
+                    )
                 )
-            )
-        );
+            );
+        } catch (RuntimeException exception) {
+            deleteUploadedPhotoAfterFailure(storedPhoto, exception);
+            throw exception;
+        }
     }
 
     private AdminDeliveryRecoveryResponse recoverInTransaction(
         Long adminId
         , String deliveryPublicId
         , AdminDeliveryRecoveryRequest request
+        , DeliveryPhotoFileService.StoredPhoto storedPhoto
     ) {
 
-        Delivery reference = deliveryRepository.findByDeliveryPublicId(deliveryPublicId)
-            .orElseThrow(DeliveryNotFoundException::new);
-        DeliveryGroup group = groupRepository.findByIdForUpdate(
-            reference.getDeliveryGroup().getId()
-        ).orElseThrow(DeliveryNotFoundException::new);
-        Rider actualRider = riderRepository.findAllByIdInForUpdate(
-            List.of(request.actualRiderId())
-        ).stream().findFirst().orElseThrow(RiderNotFoundException::new);
-        List<Delivery> deliveries = deliveryRepository.findAllByDeliveryGroupIdForUpdate(
-            group.getId()
+        LockedRecoveryContext context = lockAndValidateRecoveryContext(
+            deliveryPublicId, request.actualRiderId()
         );
-        Delivery delivery = deliveries.stream()
-            .filter(item -> item.getDeliveryPublicId().equals(deliveryPublicId))
-            .findFirst()
-            .orElseThrow(DeliveryNotFoundException::new);
-        List<DeliveryAssignment> assignments =
-            assignmentRepository.findAllByDeliveryGroupIdForUpdate(group.getId());
-        List<DeliveryAssignmentItem> items =
-            assignmentItemRepository.findAllByDeliveryGroupIdForUpdate(group.getId());
-
-        validateActualRider(actualRider, delivery, assignments, items);
-        if (delivery.getStatus() != DeliveryStatus.DELIVERING) {
-            throw new DeliveryStateConflictException();
-        }
+        DeliveryGroup group = context.group();
+        Rider actualRider = context.actualRider();
+        List<Delivery> deliveries = context.deliveries();
+        Delivery delivery = context.delivery();
+        DeliveryStatus originalStatus = delivery.getStatus();
+        validateTransition(originalStatus, request.recoveryResult());
 
         LocalDateTime recoveredAt = LocalDateTime.now(KST);
         if (request.recoveryResult() == DeliveryRecoveryResult.DELIVERED) {
@@ -166,9 +186,10 @@ public class AdminDeliveryRecoveryService {
                 , delivery
                 , request
                 , recoveredAt
+                , storedPhoto
             );
         } else {
-            recoverFailure(adminId, delivery, request, recoveredAt);
+            recoverFailure(adminId, delivery, request, recoveredAt, originalStatus);
         }
         recoveryRepository.save(
             new DeliveryAdminRecovery(
@@ -193,19 +214,53 @@ public class AdminDeliveryRecoveryService {
         );
     }
 
+    private void preparePhotoRecoveryInTransaction(
+        String deliveryPublicId
+        , AdminDeliveryRecoveryRequest request
+    ) {
+        LockedRecoveryContext context = lockAndValidateRecoveryContext(
+            deliveryPublicId, request.actualRiderId()
+        );
+        validateTransition(context.delivery().getStatus(), request.recoveryResult());
+        validateHandoff(context.delivery(), request.completion());
+    }
+
+    private LockedRecoveryContext lockAndValidateRecoveryContext(
+        String deliveryPublicId
+        , Long actualRiderId
+    ) {
+        Delivery reference = deliveryRepository.findByDeliveryPublicId(deliveryPublicId)
+            .orElseThrow(DeliveryNotFoundException::new);
+        DeliveryGroup group = groupRepository.findByIdForUpdate(
+            reference.getDeliveryGroup().getId()
+        ).orElseThrow(DeliveryNotFoundException::new);
+        Rider actualRider = riderRepository.findAllByIdInForUpdate(
+            List.of(actualRiderId)
+        ).stream().findFirst().orElseThrow(RiderNotFoundException::new);
+        List<Delivery> deliveries = deliveryRepository.findAllByDeliveryGroupIdForUpdate(
+            group.getId()
+        );
+        Delivery delivery = deliveries.stream()
+            .filter(item -> item.getDeliveryPublicId().equals(deliveryPublicId))
+            .findFirst()
+            .orElseThrow(DeliveryNotFoundException::new);
+        assignmentRepository.findAllByDeliveryGroupIdForUpdate(group.getId());
+        List<DeliveryAssignmentItem> items =
+            assignmentItemRepository.findAllByDeliveryGroupIdForUpdate(group.getId());
+        validateActualRider(actualRider, delivery, items);
+        return new LockedRecoveryContext(group, actualRider, deliveries, delivery);
+    }
+
     private void recoverCompletion(
         Long adminId
         , Delivery delivery
         , AdminDeliveryRecoveryRequest recoveryRequest
         , LocalDateTime recoveredAt
+        , DeliveryPhotoFileService.StoredPhoto storedPhoto
     ) {
         RiderDeliveryCompletionRequest request = recoveryRequest.completion();
-        if (request.actualHandoffType() != ActualHandoffType.DIRECT) {
-            throw new DeliveryHandoffInfoRequiredException();
-        }
-
-        transition(delivery, DeliveryStatus.DELIVERED);
-        completionRepository.save(
+        validateHandoff(delivery, request);
+        DeliveryCompletion completion = completionRepository.save(
             new DeliveryCompletion(
                 delivery
                 , request.actualHandoffType()
@@ -219,7 +274,23 @@ public class AdminDeliveryRecoveryService {
                 , recoveredAt
             )
         );
-        saveHistory(delivery, DeliveryStatus.DELIVERED, adminId, recoveredAt);
+        if (storedPhoto != null) {
+            photoRepository.save(
+                new DeliveryCompletionPhoto(
+                    completion
+                    , storedPhoto.storageKey()
+                    , storedPhoto.originalFilename()
+                    , storedPhoto.contentType()
+                    , storedPhoto.fileSize()
+                    , storedPhoto.uploadedBy()
+                    , storedPhoto.uploadedAt()
+                )
+            );
+        }
+        transition(delivery, DeliveryStatus.DELIVERING, DeliveryStatus.DELIVERED);
+        saveHistory(
+            delivery, DeliveryStatus.DELIVERING, DeliveryStatus.DELIVERED, adminId, recoveredAt
+        );
         if (delayService.recordCompletionDelay(delivery, recoveredAt)) {
             eventPublisher.publishRefundConfirmed(
                 delivery
@@ -235,9 +306,13 @@ public class AdminDeliveryRecoveryService {
         , Delivery delivery
         , AdminDeliveryRecoveryRequest recoveryRequest
         , LocalDateTime recoveredAt
+        , DeliveryStatus originalStatus
     ) {
         RiderDeliveryFailureRequest request = recoveryRequest.failure();
-        if (request.failureStage() != DeliveryFailureStage.DURING_DELIVERY) {
+        DeliveryFailureStage requiredStage = originalStatus == DeliveryStatus.READY
+            ? DeliveryFailureStage.BEFORE_DEPARTURE
+            : DeliveryFailureStage.DURING_DELIVERY;
+        if (request.failureStage() != requiredStage) {
             throw new InvalidDeliveryFailureReasonException();
         }
         failureValidator.validate(
@@ -248,7 +323,7 @@ public class AdminDeliveryRecoveryService {
             , request.itemRecovered()
             , request.recoveredAt()
         );
-        transition(delivery, DeliveryStatus.FAILED);
+        transition(delivery, originalStatus, DeliveryStatus.FAILED);
         failureRepository.save(
             new DeliveryFailure(
                 delivery
@@ -261,12 +336,12 @@ public class AdminDeliveryRecoveryService {
                 , toLocal(request.recoveredAt())
                 , adminId
                 , DeliveryProcessedByType.ADMIN
-                , recoveryRequest.reasonCode().name()
+                , AdminDeliveryFailureReason.SYSTEM_RECOVERY.name()
                 , recoveryRequest.reasonDetail()
                 , recoveredAt
             )
         );
-        saveHistory(delivery, DeliveryStatus.FAILED, adminId, recoveredAt);
+        saveHistory(delivery, originalStatus, DeliveryStatus.FAILED, adminId, recoveredAt);
         eventPublisher.publishStateChanged("DELIVERY_FAILED", delivery, recoveredAt);
         eventPublisher.publishRefundConfirmed(
             delivery
@@ -275,11 +350,15 @@ public class AdminDeliveryRecoveryService {
         );
     }
 
-    private void transition(Delivery delivery, DeliveryStatus nextStatus) {
+    private void transition(
+        Delivery delivery
+        , DeliveryStatus expectedStatus
+        , DeliveryStatus nextStatus
+    ) {
         if (
             deliveryRepository.transitionStatus(
                 delivery.getId()
-                , DeliveryStatus.DELIVERING
+                , expectedStatus
                 , nextStatus
             ) != 1
         ) {
@@ -290,6 +369,7 @@ public class AdminDeliveryRecoveryService {
 
     private void saveHistory(
         Delivery delivery
+        , DeliveryStatus previousStatus
         , DeliveryStatus nextStatus
         , Long adminId
         , LocalDateTime recoveredAt
@@ -297,7 +377,7 @@ public class AdminDeliveryRecoveryService {
         historyRepository.save(
             new DeliveryStatusHistory(
                 delivery
-                , DeliveryStatus.DELIVERING
+                , previousStatus
                 , nextStatus
                 , adminId
                 , DeliveryChangedByType.ADMIN
@@ -306,7 +386,10 @@ public class AdminDeliveryRecoveryService {
         );
     }
 
-    private void validateRequest(AdminDeliveryRecoveryRequest request) {
+    private void validateRequest(
+        AdminDeliveryRecoveryRequest request
+        , MultipartFile photo
+    ) {
         if (request.reasonCode().requiresDetail() && isBlank(request.reasonDetail())) {
             throw new InvalidDeliveryInfoException();
         }
@@ -320,38 +403,100 @@ public class AdminDeliveryRecoveryService {
             throw new InvalidDeliveryInfoException();
         }
         if (completion) {
-            validateCompletionRequest(request.completion());
+            validateCompletionRequest(request.completion(), photo);
+        } else if (hasPhoto(photo)) {
+            throw new DeliveryHandoffInfoRequiredException();
         }
     }
 
-    private void validateCompletionRequest(RiderDeliveryCompletionRequest request) {
+    private void validateCompletionRequest(
+        RiderDeliveryCompletionRequest request
+        , MultipartFile photo
+    ) {
+        if (request.actualHandoffType() == ActualHandoffType.DIRECT) {
+            if (!isBlank(request.storageLocation()) || hasPhoto(photo)) {
+                throw new DeliveryHandoffInfoRequiredException();
+            }
+            return;
+        }
+        if (isBlank(request.storageLocation()) || !hasPhoto(photo)) {
+            throw new DeliveryHandoffInfoRequiredException();
+        }
+    }
+
+    private void validateTransition(
+        DeliveryStatus currentStatus
+        , DeliveryRecoveryResult result
+    ) {
+        boolean allowed = result == DeliveryRecoveryResult.DELIVERED
+            ? currentStatus == DeliveryStatus.DELIVERING
+            : currentStatus == DeliveryStatus.READY
+                || currentStatus == DeliveryStatus.DELIVERING;
+        if (!allowed) {
+            throw new DeliveryStateConflictException();
+        }
+    }
+
+    private void validateHandoff(
+        Delivery delivery
+        , RiderDeliveryCompletionRequest request
+    ) {
+        if (request.actualHandoffType() == ActualHandoffType.DIRECT) {
+            return;
+        }
+        if (!Boolean.TRUE.equals(delivery.getTermsAgreed())) {
+            throw new DeliveryHandoffInfoRequiredException();
+        }
+        RequestHandoffType requested = delivery.getRequestHandoffType();
         if (
-            request.actualHandoffType() != ActualHandoffType.DIRECT
-                || !isBlank(request.storageLocation())
+            requested == RequestHandoffType.DIRECT
+                && (request.contactAttemptedAt() == null || request.contactResult() == null)
         ) {
             throw new DeliveryHandoffInfoRequiredException();
         }
+        if (request.actualHandoffType() == ActualHandoffType.OTHER) {
+            if (requested == RequestHandoffType.DIRECT) {
+                return;
+            }
+            if (requested != RequestHandoffType.OTHER) {
+                throw new DeliveryHandoffInfoRequiredException();
+            }
+            var snapshot = recipientRepository.findById(delivery.getId())
+                .orElseThrow(DeliveryHandoffInfoRequiredException::new);
+            if (isBlank(snapshot.getOtherRequest())) {
+                throw new DeliveryHandoffInfoRequiredException();
+            }
+        }
+    }
+
+    private void deleteUploadedPhotoAfterFailure(
+        DeliveryPhotoFileService.StoredPhoto storedPhoto
+        , RuntimeException originalException
+    ) {
+        if (storedPhoto == null) {
+            return;
+        }
+        try {
+            photoFileService.delete(storedPhoto.storageKey());
+        } catch (RuntimeException cleanupException) {
+            originalException.addSuppressed(cleanupException);
+            log.warn(
+                "Failed to delete unused admin recovery photo. storageKey={}",
+                storedPhoto.storageKey(), cleanupException
+            );
+        }
+    }
+
+    private boolean hasPhoto(MultipartFile photo) {
+        return photo != null && !photo.isEmpty();
     }
 
     private void validateActualRider(
         Rider actualRider
         , Delivery delivery
-        , List<DeliveryAssignment> assignments
         , List<DeliveryAssignmentItem> items
     ) {
-        boolean confirmed = assignments.stream().anyMatch(
-            assignment ->
-                assignment.getRider().getId().equals(actualRider.getId())
-                    && assignment.getStatus() == DeliveryAssignmentStatus.CONFIRMED
-                    && items.stream().anyMatch(
-                    item ->
-                        item.getAssignment().getId().equals(assignment.getId())
-                            && item.getDelivery().getId().equals(delivery.getId())
-                )
-        );
-        if (!confirmed) {
-            throw new DeliveryAccessForbiddenException();
-        }
+        executionSupport.validateCurrentConfirmedAssignment(actualRider, delivery, items);
     }
 
     private LocalDateTime toLocal(OffsetDateTime value) {
@@ -360,5 +505,13 @@ public class AdminDeliveryRecoveryService {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private record LockedRecoveryContext(
+        DeliveryGroup group
+        , Rider actualRider
+        , List<Delivery> deliveries
+        , Delivery delivery
+    ) {
     }
 }

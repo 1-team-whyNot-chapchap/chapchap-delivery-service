@@ -3,6 +3,7 @@ package com.chapchap.delivery.domain.delivery.service;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryFailureReasonException;
 import java.time.OffsetDateTime;
@@ -26,7 +27,7 @@ class DeliveryFailureValidatorTest {
                 DeliveryFailureCode.CUSTOMER_UNAVAILABLE
                 , null
                 , CONTACTED_AT
-                , "NO_ANSWER"
+                , ContactResult.NO_ANSWER
                 , true
                 , RECOVERED_AT
             )
@@ -41,7 +42,7 @@ class DeliveryFailureValidatorTest {
                 DeliveryFailureCode.CUSTOMER_UNAVAILABLE
                 , null
                 , null
-                , "NO_ANSWER"
+                , ContactResult.NO_ANSWER
                 , true
                 , RECOVERED_AT
             )
@@ -56,9 +57,24 @@ class DeliveryFailureValidatorTest {
                 DeliveryFailureCode.CUSTOMER_UNAVAILABLE
                 , null
                 , CONTACTED_AT
-                , "NO_ANSWER"
+                , ContactResult.NO_ANSWER
                 , false
                 , null
+            )
+        ).isInstanceOf(InvalidDeliveryFailureReasonException.class);
+    }
+
+    @Test
+    @DisplayName("고객 수령 거부는 실제 연락 성공 근거가 필요하다")
+    void rejectsCustomerRefusedWithoutContactedResult() {
+        assertThatThrownBy(
+            () -> validator.validate(
+                DeliveryFailureCode.CUSTOMER_REFUSED
+                , null
+                , CONTACTED_AT
+                , ContactResult.NO_ANSWER
+                , true
+                , RECOVERED_AT
             )
         ).isInstanceOf(InvalidDeliveryFailureReasonException.class);
     }

@@ -5,6 +5,7 @@ import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentIssueResolution;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentStatus;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentType;
+import com.chapchap.delivery.domain.assignment.constant.AssignmentReassignmentReason;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignment;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignmentIssue;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignmentItem;
@@ -103,7 +104,7 @@ public class AdminAssignmentIssueReassignService {
         , UserRole actorRole
         , Long issueId
         , Long newRiderId
-        , String reasonCode
+        , AssignmentReassignmentReason reasonCode
         , String reasonDetail
     ) {
         deliveryAccessService.validateAdminAccess(
@@ -111,14 +112,9 @@ public class AdminAssignmentIssueReassignService {
             , actorRole
         );
 
-        String normalizedReasonCode =
-            validateAndNormalizeReasonCode(
-                reasonCode
-            );
-
         String normalizedReasonDetail =
             validateAndNormalizeReasonDetail(
-                normalizedReasonCode
+                reasonCode
                 , reasonDetail
             );
 
@@ -301,7 +297,7 @@ public class AdminAssignmentIssueReassignService {
             , newAssignment
             , newRiderId
             , actorId
-            , normalizedReasonCode
+            , reasonCode.name()
             , normalizedReasonDetail
             , reassignedAt
         );
@@ -323,25 +319,12 @@ public class AdminAssignmentIssueReassignService {
         return newAssignment;
     }
 
-    private String validateAndNormalizeReasonCode(
-        String reasonCode
-    ) {
-        if (
-            reasonCode == null
-                || reasonCode.isBlank()
-        ) {
-            throw new InvalidAssignmentIssueReasonException();
-        }
-
-        return reasonCode.trim();
-    }
-
     private String validateAndNormalizeReasonDetail(
-        String reasonCode
+        AssignmentReassignmentReason reasonCode
         , String reasonDetail
     ) {
         if (
-            "OTHER".equals(reasonCode)
+            reasonCode == AssignmentReassignmentReason.OTHER
                 && (
                 reasonDetail == null
                     || reasonDetail.isBlank()

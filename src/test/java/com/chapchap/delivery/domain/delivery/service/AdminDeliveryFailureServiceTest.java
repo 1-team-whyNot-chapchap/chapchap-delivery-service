@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
+import com.chapchap.delivery.domain.delivery.constant.AdminDeliveryFailureReason;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
@@ -91,7 +92,8 @@ class AdminDeliveryFailureServiceTest {
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = service.fail(
-            ADMIN_ID, UserRole.ADMIN, PUBLIC_ID, request("OPERATION_REVIEW", null)
+            ADMIN_ID, UserRole.ADMIN, PUBLIC_ID,
+            request(AdminDeliveryFailureReason.OPERATIONAL_REVIEW, null)
         );
 
         assertThat(response.status()).isEqualTo(DeliveryStatus.FAILED);
@@ -106,14 +108,17 @@ class AdminDeliveryFailureServiceTest {
     void otherAdminReasonRequiresDetail() {
         assertThatThrownBy(
             () -> service.fail(
-                ADMIN_ID, UserRole.ADMIN, PUBLIC_ID, request("OTHER", null)
+                ADMIN_ID, UserRole.ADMIN, PUBLIC_ID,
+                request(AdminDeliveryFailureReason.OTHER, null)
             )
         ).isInstanceOf(InvalidDeliveryFailureReasonException.class);
 
         verify(deliveryRepository, never()).findByDeliveryPublicId(any());
     }
 
-    private AdminDeliveryFailureRequest request(String adminReasonCode, String adminReasonDetail) {
+    private AdminDeliveryFailureRequest request(
+        AdminDeliveryFailureReason adminReasonCode, String adminReasonDetail
+    ) {
         return new AdminDeliveryFailureRequest(
             DeliveryFailureStage.BEFORE_DEPARTURE
             , DeliveryFailureCode.ACCESS_DENIED

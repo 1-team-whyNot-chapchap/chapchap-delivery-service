@@ -18,6 +18,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryFailureRepositor
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryResultCorrectionRepository;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
+import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryInfoException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -91,7 +92,7 @@ class CustomerDeliveryQueryServiceTest {
         var response = service.getMyDelivery(100L, UserRole.CUSTOMER, "delivery-1");
 
         assertThat(response.customerFailureMessage())
-            .isEqualTo("배송을 완료하지 못했습니다. 고객센터로 문의해 주세요.");
+            .isEqualTo("배송을 완료하지 못했습니다. 해당 배송 회차는 환불 대상입니다.");
     }
 
     @Test
@@ -104,7 +105,7 @@ class CustomerDeliveryQueryServiceTest {
 
         assertThatThrownBy(
             () -> service.getMyDelivery(100L, UserRole.CUSTOMER, "delivery-1")
-        ).isInstanceOf(DeliveryAccessForbiddenException.class);
+        ).isInstanceOf(DeliveryNotFoundException.class);
 
         verify(completionRepository, never()).findAllByDeliveryIdIn(anyList());
     }

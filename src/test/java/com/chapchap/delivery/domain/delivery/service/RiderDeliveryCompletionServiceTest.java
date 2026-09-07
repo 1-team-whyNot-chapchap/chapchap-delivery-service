@@ -15,6 +15,7 @@ import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentItemRepository;
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentRepository;
 import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
 import com.chapchap.delivery.domain.delivery.constant.RequestHandoffType;
 import com.chapchap.delivery.domain.delivery.entity.Delivery;
@@ -250,7 +251,7 @@ class RiderDeliveryCompletionServiceTest {
                 actualHandoffType
                 , "안전한 보관 장소"
                 , contactedAt
-                , "NO_ANSWER"
+                , ContactResult.NO_ANSWER
             )
             , photo
         );

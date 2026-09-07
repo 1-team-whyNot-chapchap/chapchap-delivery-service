@@ -1,5 +1,6 @@
 package com.chapchap.delivery.global.config;
 
+import java.time.Duration;
 import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -9,7 +10,7 @@ public record DeliveryPhotoStorageProperties(
     , String accessKey
     , String secretKey
     , String bucket
-    , int presignedUrlMinutes
+    , Duration presignedGetExpiration
     , long maxFileSizeBytes
     , Set<String> allowedContentTypes
 ) {

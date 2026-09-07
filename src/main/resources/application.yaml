@@ -95,13 +95,15 @@ security:
     encryption-key: ${PERSONAL_DATA_ENCRYPTION_KEY}
 
 app:
+  internal-api:
+    api-key: ${DELIVERY_INTERNAL_API_KEY}
   storage:
     delivery-photo:
       endpoint: ${MINIO_ENDPOINT}
       access-key: ${MINIO_ACCESS_KEY}
       secret-key: ${MINIO_SECRET_KEY}
       bucket: ${MINIO_DELIVERY_PHOTO_BUCKET}
-      presigned-url-minutes: ${DELIVERY_PHOTO_PRESIGNED_MINUTES}
+      presigned-get-expiration: ${DELIVERY_PHOTO_PRESIGNED_GET_EXPIRATION}
       max-file-size-bytes: ${DELIVERY_PHOTO_MAX_FILE_SIZE_BYTES}
       allowed-content-types: ${DELIVERY_PHOTO_ALLOWED_CONTENT_TYPES}
   kafka:
