@@ -26,6 +26,8 @@ class KafkaListenerDeserializationConfigTest {
             method.getAnnotation(KafkaListener.class);
 
         assertThat(kafkaListener).isNotNull();
+        assertThat(kafkaListener.topics()).containsExactly("${kafka.topic.auth-user-events}");
+        assertThat(kafkaListener.groupId()).isEqualTo("${kafka.consumer-group.auth-user-events}");
         assertThat(kafkaListener.properties())
             .containsExactly(
                 "spring.json.value.default.type=com.chapchap.delivery.global.kafka.event.AuthUserEvent"
@@ -46,6 +48,10 @@ class KafkaListenerDeserializationConfigTest {
             method.getAnnotation(KafkaListener.class);
 
         assertThat(kafkaListener).isNotNull();
+        assertThat(kafkaListener.topics())
+            .containsExactly("${kafka.topic.subscription-delivery-orders}");
+        assertThat(kafkaListener.groupId())
+            .isEqualTo("${kafka.consumer-group.subscription-delivery-orders}");
         assertThat(kafkaListener.properties())
             .containsExactly(
                 "spring.json.value.default.type=com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent"

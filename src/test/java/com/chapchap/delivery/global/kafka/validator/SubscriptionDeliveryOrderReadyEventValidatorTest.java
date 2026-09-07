@@ -55,6 +55,7 @@ class SubscriptionDeliveryOrderReadyEventValidatorTest {
             );
 
         assertFalse(validator.supports(event));
+        assertDoesNotThrow(() -> validator.validate("ignored-key", event));
     }
 
     @Test

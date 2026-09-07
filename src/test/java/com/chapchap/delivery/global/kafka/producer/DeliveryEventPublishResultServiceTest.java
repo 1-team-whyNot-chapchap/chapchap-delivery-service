@@ -26,7 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class DeliveryEventPublishResultServiceTest {
     private static final String DELIVERY_ID = "delivery-public-id";
-    private static final String TOPIC = "delivery.delivery-events.v1";
+    private static final String TOPIC = "msa4-team1.delivery.delivery-events.v1";
 
     @Mock private IntegrationEventRecordRepository eventRecordRepository;
     @Mock private ObjectMapper objectMapper;
@@ -118,7 +118,7 @@ class DeliveryEventPublishResultServiceTest {
 
         service.recordRefundSuccess(
             event
-            , "delivery.refund-events.v1"
+            , "msa4-team1.delivery.refund-events.v1"
             , LocalDateTime.of(2026, 9, 6, 12, 10, 1)
         );
 

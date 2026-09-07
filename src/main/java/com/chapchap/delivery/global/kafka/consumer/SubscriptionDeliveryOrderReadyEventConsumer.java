@@ -1,6 +1,7 @@
 package com.chapchap.delivery.global.kafka.consumer;
 
 import com.chapchap.delivery.domain.delivery.service.DeliveryRegistrationService;
+import com.chapchap.delivery.domain.delivery.service.IntegrationEventIgnoreService;
 import com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent;
 import com.chapchap.delivery.global.kafka.validator.SubscriptionDeliveryOrderReadyEventValidator;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class SubscriptionDeliveryOrderReadyEventConsumer {
     private final SubscriptionDeliveryOrderReadyEventValidator validator;
     private final DeliveryRegistrationService deliveryRegistrationService;
+    private final IntegrationEventIgnoreService ignoreService;
 
     @KafkaListener(
         topics = "${kafka.topic.subscription-delivery-orders}"
@@ -24,11 +26,18 @@ public class SubscriptionDeliveryOrderReadyEventConsumer {
         SubscriptionDeliveryOrderReadyEvent event
         , @Header(KafkaHeaders.RECEIVED_KEY) String messageKey
     ) {
+        validator.validate(messageKey, event);
+
         if (!validator.supports(event)) {
+            ignoreService.ignore(
+                event.eventId()
+                , event.eventType()
+                , "ORDER"
+                , event.data().orderId()
+                , event.occurredAt()
+            );
             return;
         }
-
-        validator.validate(messageKey, event);
 
         deliveryRegistrationService.register(event);
     }

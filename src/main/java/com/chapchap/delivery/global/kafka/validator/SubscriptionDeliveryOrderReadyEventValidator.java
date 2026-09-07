@@ -35,6 +35,10 @@ public class SubscriptionDeliveryOrderReadyEventValidator {
     ) {
         validateEnvelope(event);
 
+        if (!supports(event)) {
+            return;
+        }
+
         SubscriptionDeliveryOrderReadyEvent.Data data = event.data();
 
         validateOrder(messageKey, data);
@@ -52,9 +56,7 @@ public class SubscriptionDeliveryOrderReadyEventValidator {
             throw invalid("event");
         }
 
-        if (!SUPPORTED_EVENT_TYPE.equals(event.eventType())) {
-            throw invalid("eventType");
-        }
+        requireNotBlank(event.eventType(), "eventType");
 
         if (event.version() == null
             || event.version() != SUPPORTED_VERSION) {
