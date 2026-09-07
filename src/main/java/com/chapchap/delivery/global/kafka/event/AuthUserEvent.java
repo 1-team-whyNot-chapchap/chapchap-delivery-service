@@ -21,6 +21,16 @@ public record AuthUserEvent(
         , String newRole
         , OffsetDateTime withdrawnAt
         , OffsetDateTime disabledAt
+        , Boolean accessAllowed
     ) {
+        public Data(
+            String role
+            , String previousRole
+            , String newRole
+            , OffsetDateTime withdrawnAt
+            , OffsetDateTime disabledAt
+        ) {
+            this(role, previousRole, newRole, withdrawnAt, disabledAt, null);
+        }
     }
 }

@@ -402,6 +402,88 @@ class AuthUserEventServiceTest {
         ).save(any(IntegrationEventRecord.class));
     }
 
+    @Test
+    @DisplayName("관리자 활성 Event이고 Projection이 없으면 접근 허용 ADMIN Projection을 생성한다")
+    void processAdminEnabledCreateProfile() {
+        AuthUserEvent event = createAdminStateEvent(
+            "0198a904-6b41-7a2d-b036-49f20670e10c", "ADMIN_ACCOUNT_ENABLED", true,
+            "2026-08-16T21:40:00+09:00"
+        );
+        when(deliveryAccessProfileRepository.findByAuthUserId(9001L))
+            .thenReturn(Optional.empty());
+
+        authUserEventService.process(event);
+
+        ArgumentCaptor<DeliveryAccessProfile> captor =
+            ArgumentCaptor.forClass(DeliveryAccessProfile.class);
+        verify(deliveryAccessProfileRepository).save(captor.capture());
+        assertEquals(UserRole.ADMIN, captor.getValue().getLastRole());
+        assertTrue(captor.getValue().getAccessAllowed());
+        verify(integrationEventRecordRepository).save(any(IntegrationEventRecord.class));
+    }
+
+    @Test
+    @DisplayName("기존 ADMIN Projection은 활성 Event로 접근 허용 상태가 된다")
+    void processAdminEnabledUpdatesProfile() {
+        DeliveryAccessProfile profile = new DeliveryAccessProfile(
+            9001L, UserRole.ADMIN, false,
+            LocalDateTime.of(2026, 8, 16, 21, 0)
+        );
+        AuthUserEvent event = createAdminStateEvent(
+            "0198a906-6b41-7a2d-b036-49f20670e10e", "ADMIN_ACCOUNT_ENABLED", true,
+            "2026-08-16T21:40:00+09:00"
+        );
+        when(deliveryAccessProfileRepository.findByAuthUserId(9001L))
+            .thenReturn(Optional.of(profile));
+
+        authUserEventService.process(event);
+
+        assertEquals(UserRole.ADMIN, profile.getLastRole());
+        assertTrue(profile.getAccessAllowed());
+        verify(deliveryAccessProfileRepository, never()).save(any(DeliveryAccessProfile.class));
+        verify(integrationEventRecordRepository).save(any(IntegrationEventRecord.class));
+    }
+
+    @Test
+    @DisplayName("기존 ADMIN Projection은 비활성 Event로 접근 차단 상태가 된다")
+    void processAdminDisabledUpdatesProfile() {
+        DeliveryAccessProfile profile = new DeliveryAccessProfile(
+            9001L, UserRole.ADMIN, true,
+            LocalDateTime.of(2026, 8, 16, 21, 0)
+        );
+        AuthUserEvent event = createAdminDisabledEvent();
+        when(deliveryAccessProfileRepository.findByAuthUserId(9001L))
+            .thenReturn(Optional.of(profile));
+
+        authUserEventService.process(event);
+
+        assertEquals(UserRole.ADMIN, profile.getLastRole());
+        assertFalse(profile.getAccessAllowed());
+        verify(deliveryAccessProfileRepository, never()).save(any(DeliveryAccessProfile.class));
+    }
+
+    @Test
+    @DisplayName("기존 ADMIN Projection보다 오래된 활성 Event는 상태를 되돌리지 않는다")
+    void processOlderAdminEnabledDoesNotOverwriteProjection() {
+        LocalDateTime latest = LocalDateTime.of(2026, 8, 16, 22, 0);
+        DeliveryAccessProfile profile = new DeliveryAccessProfile(
+            9001L, UserRole.ADMIN, false, latest
+        );
+        AuthUserEvent event = createAdminStateEvent(
+            "0198a905-6b41-7a2d-b036-49f20670e10d", "ADMIN_ACCOUNT_ENABLED", true,
+            "2026-08-16T21:50:00+09:00"
+        );
+        when(deliveryAccessProfileRepository.findByAuthUserId(9001L))
+            .thenReturn(Optional.of(profile));
+
+        authUserEventService.process(event);
+
+        assertFalse(profile.getAccessAllowed());
+        assertEquals(latest, profile.getLastAuthEventOccurredAt());
+        verify(deliveryAccessProfileRepository, never()).save(any(DeliveryAccessProfile.class));
+        verify(integrationEventRecordRepository).save(any(IntegrationEventRecord.class));
+    }
+
     private AuthUserEvent createRoleChangedEvent(
         String eventId
         , String previousRole
@@ -448,24 +530,25 @@ class AuthUserEventServiceTest {
     }
 
     private AuthUserEvent createAdminDisabledEvent() {
-        OffsetDateTime disabledAt =
-            OffsetDateTime.parse(
-                "2026-08-16T21:30:00+09:00"
-            );
-
-        return new AuthUserEvent(
+        return createAdminStateEvent(
             "0198a903-6b41-7a2d-b036-49f20670e10b"
             , "ADMIN_ACCOUNT_DISABLED"
-            , 1
-            , disabledAt
-            , 9001L
-            , new AuthUserEvent.Data(
-            null
-            , null
-            , null
-            , null
-            , disabledAt
-        )
+            , false
+            , "2026-08-16T21:30:00+09:00"
+        );
+    }
+
+    private AuthUserEvent createAdminStateEvent(
+        String eventId, String eventType, boolean accessAllowed, String occurredAt
+    ) {
+        OffsetDateTime eventOccurredAt = OffsetDateTime.parse(occurredAt);
+        return new AuthUserEvent(
+            eventId, eventType, 1, eventOccurredAt, 9001L,
+            new AuthUserEvent.Data(
+                "ADMIN", null, null, null,
+                eventType.equals("ADMIN_ACCOUNT_DISABLED") ? eventOccurredAt : null,
+                accessAllowed
+            )
         );
     }
 }

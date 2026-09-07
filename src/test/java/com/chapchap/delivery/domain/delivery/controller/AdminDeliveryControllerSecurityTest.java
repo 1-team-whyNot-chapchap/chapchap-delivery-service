@@ -2,10 +2,12 @@ package com.chapchap.delivery.domain.delivery.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,6 +36,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 
 @WebMvcTest(AdminDeliveryController.class)
 @Import({
@@ -80,30 +83,28 @@ class AdminDeliveryControllerSecurityTest {
     @DisplayName("관리자 복구 API는 미인증 요청을 거절한다")
     void recoveryReturnsUnauthorizedWithoutAuthentication() throws Exception {
         mockMvc.perform(
-                post("/api/delivery/admin/deliveries/{deliveryId}/recovery", DELIVERY_ID)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(failedRecoveryRequest())
+                multipart("/api/delivery/admin/deliveries/{deliveryId}/recovery", DELIVERY_ID)
+                    .file(recoveryRequestPart())
             )
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.code").value(ErrorCode.AUTHENTICATION_REQUIRED.getCode()));
 
-        verify(recoveryService, never()).recover(any(), any(), any(), any());
+        verify(recoveryService, never()).recover(any(), any(), any(), any(), any());
     }
 
     @Test
     @DisplayName("기사는 관리자 복구 API를 사용할 수 없다")
     void recoveryReturnsForbiddenForRider() throws Exception {
         mockMvc.perform(
-                post("/api/delivery/admin/deliveries/{deliveryId}/recovery", DELIVERY_ID)
+                multipart("/api/delivery/admin/deliveries/{deliveryId}/recovery", DELIVERY_ID)
                     .header("X-User-Id", ADMIN_ID)
                     .header("X-User-Role", UserRole.RIDER.name())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(failedRecoveryRequest())
+                    .file(recoveryRequestPart())
             )
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.code").value(ErrorCode.DELIVERY_FORBIDDEN.getCode()));
 
-        verify(recoveryService, never()).recover(any(), any(), any(), any());
+        verify(recoveryService, never()).recover(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -115,6 +116,7 @@ class AdminDeliveryControllerSecurityTest {
                 , eq(UserRole.ADMIN)
                 , eq(DELIVERY_ID)
                 , any()
+                , isNull()
             )
         ).thenReturn(
             new AdminDeliveryRecoveryResponse(
@@ -128,11 +130,10 @@ class AdminDeliveryControllerSecurityTest {
         );
 
         mockMvc.perform(
-                post("/api/delivery/admin/deliveries/{deliveryId}/recovery", DELIVERY_ID)
+                multipart("/api/delivery/admin/deliveries/{deliveryId}/recovery", DELIVERY_ID)
                     .header("X-User-Id", ADMIN_ID)
                     .header("X-User-Role", UserRole.ADMIN.name())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(failedRecoveryRequest())
+                    .file(recoveryRequestPart())
             )
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value("00"))
@@ -292,5 +293,14 @@ class AdminDeliveryControllerSecurityTest {
               }
             }
         """;
+    }
+
+    private MockMultipartFile recoveryRequestPart() {
+        return new MockMultipartFile(
+            "request"
+            , "request.json"
+            , MediaType.APPLICATION_JSON_VALUE
+            , failedRecoveryRequest().getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
     }
 }

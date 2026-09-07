@@ -50,15 +50,17 @@ class DeliveryAccessServiceTest {
     }
 
     @Test
-    @DisplayName("Gateway 역할이 ADMIN이고 로컬 Projection이 없으면 접근을 허용한다")
-    void validateAdminAccessWithoutProfileSuccess() {
+    @DisplayName("Gateway 역할이 ADMIN이어도 로컬 Projection이 없으면 접근을 거절한다")
+    void validateAdminAccessWithoutProfileFailsClosed() {
         when(
             deliveryAccessProfileRepository.findByAuthUserId(
                 ADMIN_USER_ID
             )
         ).thenReturn(Optional.empty());
 
-        assertDoesNotThrow(
+        assertThrows(
+            DeliveryAccessForbiddenException.class
+            ,
             () -> deliveryAccessService.validateAdminAccess(
                 ADMIN_USER_ID
                 , UserRole.ADMIN

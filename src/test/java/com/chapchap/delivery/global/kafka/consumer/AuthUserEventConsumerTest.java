@@ -1,6 +1,7 @@
 package com.chapchap.delivery.global.kafka.consumer;
 
 import com.chapchap.delivery.domain.access.service.AuthUserEventService;
+import com.chapchap.delivery.domain.delivery.service.IntegrationEventIgnoreService;
 import com.chapchap.delivery.global.exception.technical.InvalidAuthUserEventException;
 import com.chapchap.delivery.global.kafka.event.AuthUserEvent;
 import com.chapchap.delivery.global.kafka.validator.AuthUserEventValidator;
@@ -29,6 +30,9 @@ class AuthUserEventConsumerTest {
 
     @Mock
     private AuthUserEventService authUserEventService;
+
+    @Mock
+    private IntegrationEventIgnoreService ignoreService;
 
     @InjectMocks
     private AuthUserEventConsumer consumer;
@@ -101,6 +105,31 @@ class AuthUserEventConsumerTest {
             authUserEventService
             , never()
         ).process(event);
+        verify(ignoreService).ignore(
+            event.eventId(), event.eventType(), "AUTH_USER", "25", event.occurredAt()
+        );
+    }
+
+    @Test
+    @DisplayName("알 수 없는 Auth Event도 Service에 정상 무시 처리를 위임한다")
+    void handleUnknownEventIgnore() {
+        AuthUserEvent event = new AuthUserEvent(
+            "0198a8e8-2acd-7b24-a682-b50c6784515b"
+            , "UNKNOWN_AUTH_EVENT"
+            , 1
+            , OffsetDateTime.parse("2026-08-16T21:00:00+09:00")
+            , 25L
+            , new AuthUserEvent.Data(null, null, null, null, null)
+        );
+        when(validator.supports(event)).thenReturn(false);
+
+        consumer.handleAuthUserEvent(event, "25");
+
+        verify(validator).validate("25", event);
+        verify(ignoreService).ignore(
+            event.eventId(), event.eventType(), "AUTH_USER", "25", event.occurredAt()
+        );
+        verify(authUserEventService, never()).process(event);
     }
 
     @Test
@@ -138,6 +167,13 @@ class AuthUserEventConsumerTest {
             authUserEventService
             , never()
         ).process(event);
+        verify(ignoreService, never()).ignore(
+            org.mockito.ArgumentMatchers.any()
+            , org.mockito.ArgumentMatchers.any()
+            , org.mockito.ArgumentMatchers.any()
+            , org.mockito.ArgumentMatchers.any()
+            , org.mockito.ArgumentMatchers.any()
+        );
     }
 
     private AuthUserEvent createRoleChangedEvent() {

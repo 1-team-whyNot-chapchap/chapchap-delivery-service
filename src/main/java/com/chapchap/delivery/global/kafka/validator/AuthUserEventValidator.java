@@ -21,10 +21,14 @@ public class AuthUserEventValidator {
     private static final String ADMIN_ACCOUNT_DISABLED =
         "ADMIN_ACCOUNT_DISABLED";
 
+    private static final String ADMIN_ACCOUNT_ENABLED =
+        "ADMIN_ACCOUNT_ENABLED";
+
     private static final Set<String> SUPPORTED_EVENT_TYPES =
         Set.of(
             USER_ROLE_CHANGED
             , USER_WITHDRAWN
+            , ADMIN_ACCOUNT_ENABLED
             , ADMIN_ACCOUNT_DISABLED
         );
 
@@ -97,8 +101,11 @@ public class AuthUserEventValidator {
             case USER_WITHDRAWN ->
                 validateUserWithdrawn(event.data());
 
+            case ADMIN_ACCOUNT_ENABLED ->
+                validateAdminAccountState(event.data(), true);
+
             case ADMIN_ACCOUNT_DISABLED ->
-                validateAdminAccountDisabled(event.data());
+                validateAdminAccountState(event.data(), false);
 
             default -> {
             }
@@ -132,11 +139,14 @@ public class AuthUserEventValidator {
         }
     }
 
-    private void validateAdminAccountDisabled(
-        AuthUserEvent.Data data
+    private void validateAdminAccountState(
+        AuthUserEvent.Data data, boolean expectedAccessAllowed
     ) {
-        if (data.disabledAt() == null) {
-            throw invalid("data.disabledAt");
+        if (!"ADMIN".equals(data.role())) {
+            throw invalid("data.role");
+        }
+        if (!Objects.equals(data.accessAllowed(), expectedAccessAllowed)) {
+            throw invalid("data.accessAllowed");
         }
     }
 
