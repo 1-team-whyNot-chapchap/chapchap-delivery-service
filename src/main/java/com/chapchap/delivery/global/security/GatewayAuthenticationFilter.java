@@ -29,6 +29,11 @@ public class GatewayAuthenticationFilter
         "ROLE_";
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/internal/");
+    }
+
+    @Override
     protected void doFilterInternal(
         HttpServletRequest request
         , @NonNull HttpServletResponse response
