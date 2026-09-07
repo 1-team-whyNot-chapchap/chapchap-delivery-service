@@ -25,6 +25,7 @@ import com.chapchap.delivery.domain.delivery.response.RiderEmergencyDeliveryFail
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
+import com.chapchap.delivery.global.exception.business.DeliveryAssignmentNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryStateConflictException;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryFailureReasonException;
@@ -94,7 +95,7 @@ public class RiderEmergencyDeliveryFailureService {
         DeliveryAssignment reference = assignmentRepository.findMineById(
             assignmentId
             , authUserId
-        ).orElseThrow(DeliveryAccessForbiddenException::new);
+        ).orElseThrow(DeliveryAssignmentNotFoundException::new);
         DeliveryGroup group = groupRepository.findByIdForUpdate(
             reference.getDeliveryGroup().getId()
         ).orElseThrow(DeliveryNotFoundException::new);
@@ -119,7 +120,7 @@ public class RiderEmergencyDeliveryFailureService {
             .filter(candidate -> candidate.getRider().getId().equals(rider.getId()))
             .filter(candidate -> candidate.getStatus() == DeliveryAssignmentStatus.CONFIRMED)
             .findFirst()
-            .orElseThrow(DeliveryAccessForbiddenException::new);
+            .orElseThrow(DeliveryAssignmentNotFoundException::new);
 
         LocalDateTime failedAt = LocalDateTime.now(KST);
         List<String> failedIds = new ArrayList<>();

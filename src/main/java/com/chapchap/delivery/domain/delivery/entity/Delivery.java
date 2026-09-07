@@ -94,6 +94,9 @@ public class Delivery {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at", insertable = false, updatable = false)
+    private LocalDateTime deletedAt;
+
     public Delivery(
         DeliveryGroup deliveryGroup
         , String sourceOrderId

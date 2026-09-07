@@ -24,6 +24,7 @@ import com.chapchap.delivery.domain.delivery.repository.DeliveryResultCorrection
 import com.chapchap.delivery.domain.delivery.request.AdminDeliveryResultCorrectionRequest;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryResultCorrectionResponse;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
+import com.chapchap.delivery.global.exception.business.DeliveryResultCorrectionNoChangeException;
 import com.chapchap.delivery.global.exception.business.DeliveryResultNotCorrectableException;
 import com.chapchap.delivery.global.exception.business.OtherReasonDetailRequiredException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -168,7 +169,7 @@ public class AdminDeliveryResultCorrectionService {
             String normalizedAfterValue = normalizeFieldValue(fieldName, change.afterValue());
             validateFieldLength(fieldName, normalizedAfterValue);
             if (Objects.equals(current.get(fieldName), normalizedAfterValue)) {
-                throw new DeliveryResultNotCorrectableException();
+                throw new DeliveryResultCorrectionNoChangeException();
             }
         }
     }
@@ -199,7 +200,7 @@ public class AdminDeliveryResultCorrectionService {
         RequestHandoffType requestedHandoffType = delivery.getRequestHandoffType();
         if (requestedHandoffType == RequestHandoffType.DIRECT
             && (completion.getContactAttemptedAt() == null
-                || isBlank(completion.getContactResult()))) {
+                || completion.getContactResult() == null)) {
             throw new DeliveryResultNotCorrectableException();
         }
 

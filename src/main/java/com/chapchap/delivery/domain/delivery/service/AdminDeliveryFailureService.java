@@ -107,7 +107,7 @@ public class AdminDeliveryFailureService {
             delivery, request.failureStage(), request.failureCode(), request.failureDetail(),
             toLocal(request.contactAttemptedAt()), request.contactResult(), request.itemRecovered(),
             toLocal(request.recoveredAt()), authUserId, DeliveryProcessedByType.ADMIN,
-            request.adminReasonCode(), request.adminReasonDetail(), failedAt
+            request.adminReasonCode().name(), request.adminReasonDetail(), failedAt
         ));
         historyRepository.save(new DeliveryStatusHistory(
             delivery, expected, DeliveryStatus.FAILED, authUserId,
@@ -137,7 +137,7 @@ public class AdminDeliveryFailureService {
             , request.itemRecovered()
             , request.recoveredAt()
         );
-        if ("OTHER".equals(request.adminReasonCode()) && blank(request.adminReasonDetail())) {
+        if (request.adminReasonCode().requiresDetail() && blank(request.adminReasonDetail())) {
             throw new InvalidDeliveryFailureReasonException();
         }
     }
@@ -149,7 +149,7 @@ public class AdminDeliveryFailureService {
             && Objects.equals(f.getContactResult(), r.contactResult())
             && Objects.equals(f.getItemRecovered(), r.itemRecovered())
             && Objects.equals(f.getRecoveredAt(), toLocal(r.recoveredAt()))
-            && Objects.equals(f.getAdminReasonCode(), r.adminReasonCode())
+            && Objects.equals(f.getAdminReasonCode(), r.adminReasonCode().name())
             && Objects.equals(f.getAdminReasonDetail(), r.adminReasonDetail());
     }
 

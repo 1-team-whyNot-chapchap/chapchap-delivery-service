@@ -1,6 +1,6 @@
 package com.chapchap.delivery.domain.delivery.entity;
 
-import com.chapchap.delivery.domain.delivery.constant.DeliveryAdminRecoveryReason;
+import com.chapchap.delivery.domain.delivery.constant.AdminRecoveryReason;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryRecoveryResult;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -34,7 +34,7 @@ public class DeliveryAdminRecovery {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "reason_code", nullable = false, length = 32)
-    private DeliveryAdminRecoveryReason reasonCode;
+    private AdminRecoveryReason reasonCode;
 
     @Column(name = "reason_detail", length = 500)
     private String reasonDetail;
@@ -55,7 +55,7 @@ public class DeliveryAdminRecovery {
     public DeliveryAdminRecovery(
         Delivery delivery
         , DeliveryRecoveryResult recoveryResult
-        , DeliveryAdminRecoveryReason reasonCode
+        , AdminRecoveryReason reasonCode
         , String reasonDetail
         , Long actualRiderId
         , Long recoveredBy

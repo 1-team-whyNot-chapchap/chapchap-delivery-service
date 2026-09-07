@@ -139,7 +139,7 @@ class DeliveryPhotoFileServiceTest {
                 , "access"
                 , "secret"
                 , "delivery-photos"
-                , 10
+                , java.time.Duration.ofMinutes(5)
                 , maxFileSize
                 , allowedContentTypes
             )

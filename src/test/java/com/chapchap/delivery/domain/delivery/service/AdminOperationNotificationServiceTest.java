@@ -35,7 +35,7 @@ class AdminOperationNotificationServiceTest {
     @BeforeEach
     void setUp() {
         service = new AdminOperationNotificationService(
-            repository, producer, jsonMapper, "delivery.operation-notification-requests.v1"
+            repository, producer, jsonMapper, "msa4-team1.delivery.operation-notification-requests.v1"
         );
     }
 
@@ -59,7 +59,7 @@ class AdminOperationNotificationServiceTest {
         assertThat(captor.getValue().getStatus()).isEqualTo(IntegrationEventStatus.SUCCESS);
         assertThat(captor.getValue().getBusinessKey()).isEqualTo("business-1");
         assertThat(captor.getValue().getTopic())
-            .isEqualTo("delivery.operation-notification-requests.v1");
+            .isEqualTo("msa4-team1.delivery.operation-notification-requests.v1");
         assertThat(captor.getValue().getEventKey()).isEqualTo("ADMIN");
     }
 

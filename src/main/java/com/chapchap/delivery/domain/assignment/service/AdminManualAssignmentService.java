@@ -4,6 +4,7 @@ import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentStatus;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentType;
+import com.chapchap.delivery.domain.assignment.constant.ManualAssignmentReason;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignment;
 import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignmentItem;
 import com.chapchap.delivery.domain.assignment.event.RiderAssignmentAvailableEvent;
@@ -31,6 +32,7 @@ import com.chapchap.delivery.global.exception.business.DeliveryAssignmentStateCo
 import com.chapchap.delivery.global.exception.business.DeliveryCapacityExceededException;
 import com.chapchap.delivery.global.exception.business.DeliveryGroupNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryGroupStateConflictException;
+import com.chapchap.delivery.global.exception.business.InvalidAssignmentIssueReasonException;
 import com.chapchap.delivery.global.exception.business.OtherReasonDetailRequiredException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -92,6 +94,7 @@ public class AdminManualAssignmentService {
         , AdminManualAssignmentsRequest request
     ) {
         deliveryAccessService.validateAdminAccess(actorId, actorRole);
+        request.assignments().forEach(this::validateAreaExceptionReason);
 
         DeliveryGroup group = deliveryGroupRepository.findByIdForUpdate(deliveryGroupId)
             .orElseThrow(DeliveryGroupNotFoundException::new);
@@ -131,7 +134,6 @@ public class AdminManualAssignmentService {
 
         for (AdminManualAssignmentItemRequest assignmentRequest : request.assignments()) {
             Rider rider = riderMap.get(assignmentRequest.riderId());
-            validateAreaExceptionReason(assignmentRequest);
             RiderAssignmentLoad load = new RiderAssignmentLoad(0, 0);
             List<Delivery> requestedDeliveries = new ArrayList<>();
 
@@ -172,12 +174,8 @@ public class AdminManualAssignmentService {
                     , "MANUAL_ASSIGNMENT_CREATED"
                     , actorId
                     , AuditActorType.ADMIN
-                    , assignmentRequest.areaException()
-                        ? assignmentRequest.reasonCode().trim()
-                        : null
-                    , assignmentRequest.areaException()
-                        ? assignmentRequest.reasonDetail().trim()
-                        : null
+                    , assignmentRequest.reasonCode().name()
+                    , normalizeDetail(assignmentRequest.reasonDetail())
                     , null
                     , null
                     , assignedAt
@@ -210,12 +208,18 @@ public class AdminManualAssignmentService {
     }
 
     private void validateAreaExceptionReason(AdminManualAssignmentItemRequest request) {
-        if (!request.areaException()) {
-            return;
+        ManualAssignmentReason reasonCode = request.reasonCode();
+        String reasonDetail = normalizeDetail(request.reasonDetail());
+        if (reasonCode == null
+            || (request.areaException() && reasonCode != ManualAssignmentReason.AREA_EXCEPTION)) {
+            throw new InvalidAssignmentIssueReasonException();
         }
-        if (request.reasonCode() == null || request.reasonCode().isBlank()
-            || request.reasonDetail() == null || request.reasonDetail().isBlank()) {
+        if (reasonCode.requiresDetail() && reasonDetail == null) {
             throw new OtherReasonDetailRequiredException();
         }
+    }
+
+    private String normalizeDetail(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

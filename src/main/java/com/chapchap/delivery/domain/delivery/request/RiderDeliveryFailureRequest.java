@@ -1,5 +1,6 @@
 package com.chapchap.delivery.domain.delivery.request;
 
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
 import jakarta.validation.constraints.NotNull;
@@ -19,8 +20,7 @@ public record RiderDeliveryFailureRequest(
 
     , OffsetDateTime contactAttemptedAt
 
-    , @Size(max = 30)
-    String contactResult
+    , ContactResult contactResult
 
     , @NotNull
     Boolean itemRecovered

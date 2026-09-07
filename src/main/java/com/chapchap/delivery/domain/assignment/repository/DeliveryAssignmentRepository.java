@@ -235,4 +235,18 @@ public interface DeliveryAssignmentRepository
         , @Param("issueReportedStatus") DeliveryAssignmentStatus issueReportedStatus
         , @Param("reassignedStatus") DeliveryAssignmentStatus reassignedStatus
     );
+
+    @Modifying(flushAutomatically = true)
+    @Query("""
+        UPDATE DeliveryAssignment da
+        SET da.status = :reassignedStatus
+        WHERE da.id = :assignmentId
+            AND da.deletedAt IS NULL
+            AND da.status = :confirmedStatus
+    """)
+    int reassignIfConfirmed(
+        @Param("assignmentId") Long assignmentId
+        , @Param("confirmedStatus") DeliveryAssignmentStatus confirmedStatus
+        , @Param("reassignedStatus") DeliveryAssignmentStatus reassignedStatus
+    );
 }

@@ -3,6 +3,7 @@ package com.chapchap.delivery.domain.delivery.service;
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
 import com.chapchap.delivery.domain.delivery.entity.Delivery;
+import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionPhotoRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryCompletionRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryRepository;
@@ -12,7 +13,6 @@ import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenEx
 import com.chapchap.delivery.global.exception.business.CompletionPhotoRequiredException;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import com.chapchap.delivery.global.storage.DeliveryPhotoStorage;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import org.springframework.stereotype.Service;
@@ -54,8 +54,15 @@ public class DeliveryPhotoAccessService {
     private DeliveryPhotoAccessResponse issue(String publicId, Long customerId) {
         Delivery delivery=deliveryRepository.findByDeliveryPublicId(publicId)
             .orElseThrow(DeliveryNotFoundException::new);
+        if (delivery.getDeletedAt() != null
+            || delivery.getDeliveryGroup().getDeletedAt() != null) {
+            throw new DeliveryNotFoundException();
+        }
         if (customerId!=null && !delivery.getCustomerId().equals(customerId))
-            throw new DeliveryAccessForbiddenException();
+            throw new DeliveryNotFoundException();
+        if (delivery.getStatus() != DeliveryStatus.DELIVERED) {
+            throw new CompletionPhotoRequiredException();
+        }
         var completion=completionRepository.findByDeliveryId(delivery.getId())
             .orElseThrow(CompletionPhotoRequiredException::new);
         var photo=photoRepository.findByDeliveryCompletionId(completion.getId())
@@ -63,7 +70,7 @@ public class DeliveryPhotoAccessService {
         LocalDateTime now=LocalDateTime.now(KST);
         return new DeliveryPhotoAccessResponse(
             storage.createPresignedGetUrl(photo.getStorageKey(),
-                Duration.ofMinutes(properties.presignedUrlMinutes())),
-            now.plusMinutes(properties.presignedUrlMinutes()).atZone(KST).toOffsetDateTime());
+                properties.presignedGetExpiration()),
+            now.plus(properties.presignedGetExpiration()).atZone(KST).toOffsetDateTime());
     }
 }

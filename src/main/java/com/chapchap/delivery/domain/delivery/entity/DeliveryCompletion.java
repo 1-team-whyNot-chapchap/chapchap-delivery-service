@@ -1,6 +1,7 @@
 package com.chapchap.delivery.domain.delivery.entity;
 
 import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryProcessedByType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -47,8 +48,9 @@ public class DeliveryCompletion {
     @Column(name = "contact_attempted_at")
     private LocalDateTime contactAttemptedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "contact_result", length = 30)
-    private String contactResult;
+    private ContactResult contactResult;
 
     @Column(name = "processed_by", nullable = false)
     private Long processedBy;
@@ -75,7 +77,7 @@ public class DeliveryCompletion {
         , ActualHandoffType actualHandoffType
         , String storageLocation
         , LocalDateTime contactAttemptedAt
-        , String contactResult
+        , ContactResult contactResult
         , Long processedBy
         , LocalDateTime completedAt
     ) {
@@ -98,7 +100,7 @@ public class DeliveryCompletion {
         , ActualHandoffType actualHandoffType
         , String storageLocation
         , LocalDateTime contactAttemptedAt
-        , String contactResult
+        , ContactResult contactResult
         , Long processedBy
         , DeliveryProcessedByType processedByType
         , String adminReasonCode

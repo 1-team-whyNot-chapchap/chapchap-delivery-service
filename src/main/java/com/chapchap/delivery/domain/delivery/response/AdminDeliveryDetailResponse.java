@@ -2,6 +2,7 @@ package com.chapchap.delivery.domain.delivery.response;
 
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentStatus;
 import com.chapchap.delivery.domain.delivery.constant.ActualHandoffType;
+import com.chapchap.delivery.domain.delivery.constant.ContactResult;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureCode;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryFailureStage;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryProcessedByType;
@@ -44,7 +45,7 @@ public record AdminDeliveryDetailResponse(
         , ActualHandoffType effectiveActualHandoffType
         , String effectiveStorageLocation
         , OffsetDateTime contactAttemptedAt
-        , String contactResult
+        , ContactResult contactResult
         , Long processedBy
         , DeliveryProcessedByType processedByType
         , String adminReasonCode
@@ -61,7 +62,7 @@ public record AdminDeliveryDetailResponse(
         , DeliveryFailureCode effectiveFailureCode
         , String effectiveFailureDetail
         , OffsetDateTime contactAttemptedAt
-        , String contactResult
+        , ContactResult contactResult
         , Boolean itemRecovered
         , OffsetDateTime recoveredAt
         , Long processedBy

@@ -1,5 +1,6 @@
 package com.chapchap.delivery.domain.delivery.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -7,11 +8,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
 
+import com.chapchap.delivery.domain.assignment.entity.DeliveryAssignmentItem;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryGroupStatus;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
 import com.chapchap.delivery.domain.delivery.entity.Delivery;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupStatusHistoryRepository;
+import com.chapchap.delivery.domain.rider.entity.Rider;
+import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +55,22 @@ class DeliveryExecutionSupportTest {
 
     @Test @DisplayName("모두 FAILED이면 FAILED로 계산한다")
     void failedFailed() { verifyFinal(DeliveryGroupStatus.FAILED, DeliveryStatus.FAILED, DeliveryStatus.FAILED); }
+
+    @Test
+    @DisplayName("현재 담당 관계가 아닌 배송은 존재하지 않는 자원처럼 처리한다")
+    void hidesDeliveryWhenRiderIsNotCurrentAssignee() {
+        Rider rider = mock(Rider.class);
+        Delivery delivery = mock(Delivery.class);
+        Delivery unrelatedDelivery = mock(Delivery.class);
+        DeliveryAssignmentItem unrelatedItem = mock(DeliveryAssignmentItem.class);
+        when(delivery.getId()).thenReturn(20L);
+        when(unrelatedDelivery.getId()).thenReturn(21L);
+        when(unrelatedItem.getDelivery()).thenReturn(unrelatedDelivery);
+
+        assertThatThrownBy(() -> support.validateCurrentConfirmedAssignment(
+            rider, delivery, List.of(unrelatedItem)
+        )).isInstanceOf(DeliveryNotFoundException.class);
+    }
 
     private void verifyNoChange(DeliveryStatus first, DeliveryStatus second) {
         DeliveryGroup group = group(DeliveryGroupStatus.IN_PROGRESS);

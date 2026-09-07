@@ -1,6 +1,6 @@
 package com.chapchap.delivery.domain.assignment.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.chapchap.delivery.domain.assignment.constant.AssignmentReassignmentReason;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -10,9 +10,8 @@ public record AdminAssignmentIssueReassignRequest(
     @Positive
     Long newRiderId
 
-    , @NotBlank
-    @Size(max = 32)
-    String reasonCode
+    , @NotNull
+    AssignmentReassignmentReason reasonCode
 
     , @Size(max = 500)
     String reasonDetail

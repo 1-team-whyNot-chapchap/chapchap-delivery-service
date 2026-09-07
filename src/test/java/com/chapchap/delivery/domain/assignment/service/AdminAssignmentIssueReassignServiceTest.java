@@ -2,6 +2,7 @@ package com.chapchap.delivery.domain.assignment.service;
 
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
+import com.chapchap.delivery.domain.assignment.constant.AssignmentReassignmentReason;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentIssueResolution;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentStatus;
 import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentType;
@@ -187,7 +188,7 @@ class AdminAssignmentIssueReassignServiceTest {
                 , UserRole.ADMIN
                 , ISSUE_ID
                 , NEW_RIDER_ID
-                , "OTHER"
+                , AssignmentReassignmentReason.OTHER
                 , "  차량 사용 불가로 재배정합니다.  "
             );
 
@@ -366,7 +367,7 @@ class AdminAssignmentIssueReassignServiceTest {
                     , UserRole.ADMIN
                     , ISSUE_ID
                     , ORIGINAL_RIDER_ID
-                    , "OTHER"
+                    , AssignmentReassignmentReason.OTHER
                     , "동일 기사 재배정"
                 )
         )
@@ -416,7 +417,7 @@ class AdminAssignmentIssueReassignServiceTest {
                     , UserRole.ADMIN
                     , ISSUE_ID
                     , NEW_RIDER_ID
-                    , "OTHER"
+                    , AssignmentReassignmentReason.OTHER
                     , "근무 조건 확인"
                 )
         )
@@ -526,7 +527,7 @@ class AdminAssignmentIssueReassignServiceTest {
                     , UserRole.ADMIN
                     , ISSUE_ID
                     , NEW_RIDER_ID
-                    , "OTHER"
+                    , AssignmentReassignmentReason.OTHER
                     , "수용량 검증"
                 )
         )
@@ -625,7 +626,7 @@ class AdminAssignmentIssueReassignServiceTest {
                     , UserRole.ADMIN
                     , ISSUE_ID
                     , NEW_RIDER_ID
-                    , "OTHER"
+                    , AssignmentReassignmentReason.OTHER
                     , "재배정"
                 )
         )
@@ -675,7 +676,7 @@ class AdminAssignmentIssueReassignServiceTest {
                     , UserRole.ADMIN
                     , ISSUE_ID
                     , NEW_RIDER_ID
-                    , "OTHER"
+                    , AssignmentReassignmentReason.OTHER
                     , "재배정"
                 )
         )
@@ -721,7 +722,7 @@ class AdminAssignmentIssueReassignServiceTest {
                     , UserRole.ADMIN
                     , ISSUE_ID
                     , NEW_RIDER_ID
-                    , "OTHER"
+                    , AssignmentReassignmentReason.OTHER
                     , "   "
                 )
         )

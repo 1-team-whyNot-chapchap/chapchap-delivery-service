@@ -27,6 +27,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
             JOIN FETCH d.deliveryGroup g
             JOIN FETCH g.slot s
             WHERE d.customerId = :customerId
+              AND d.deletedAt IS NULL
               AND g.deletedAt IS NULL
               AND (:dateFrom IS NULL OR g.deliveryDate >= :dateFrom)
               AND (:dateTo IS NULL OR g.deliveryDate <= :dateTo)
@@ -39,6 +40,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
             JOIN d.deliveryGroup g
             JOIN g.slot s
             WHERE d.customerId = :customerId
+              AND d.deletedAt IS NULL
               AND g.deletedAt IS NULL
               AND (:dateFrom IS NULL OR g.deliveryDate >= :dateFrom)
               AND (:dateTo IS NULL OR g.deliveryDate <= :dateTo)
@@ -61,6 +63,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         JOIN FETCH d.deliveryGroup g
         JOIN FETCH g.slot
         WHERE d.deliveryPublicId = :deliveryPublicId
+          AND d.deletedAt IS NULL
           AND g.deletedAt IS NULL
     """)
     Optional<Delivery> findDetailByDeliveryPublicId(
@@ -73,6 +76,8 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         JOIN FETCH d.deliveryGroup g
         JOIN FETCH g.slot
         WHERE g.id IN :deliveryGroupIds
+          AND d.deletedAt IS NULL
+          AND g.deletedAt IS NULL
         ORDER BY d.id ASC
     """)
     List<Delivery> findAllByDeliveryGroupIdIn(
@@ -85,6 +90,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         SET d.status = :nextStatus,
             d.deliveryVersion = d.deliveryVersion + 1
         WHERE d.id = :deliveryId
+          AND d.deletedAt IS NULL
           AND d.status = :expectedStatus
     """)
     int transitionStatus(
@@ -97,7 +103,10 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
     @Query("""
         SELECT d
         FROM Delivery d
+        JOIN d.deliveryGroup g
         WHERE d.deliveryPublicId = :deliveryPublicId
+          AND d.deletedAt IS NULL
+          AND g.deletedAt IS NULL
     """)
     Optional<Delivery> findByDeliveryPublicIdForUpdate(
         @Param("deliveryPublicId") String deliveryPublicId
@@ -120,6 +129,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         SELECT d
         FROM Delivery d
         WHERE d.deliveryGroup.id = :deliveryGroupId
+          AND d.deletedAt IS NULL
         ORDER BY d.id ASC
     """)
     List<Delivery> findAllByDeliveryGroupIdForUpdate(
@@ -133,6 +143,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         JOIN FETCH d.deliveryGroup g
         JOIN FETCH g.slot s
         WHERE g.deliveryDate = :deliveryDate
+          AND d.deletedAt IS NULL
           AND g.deletedAt IS NULL
           AND s.code = :slotCode
           AND d.status IN :statuses
@@ -150,6 +161,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         JOIN FETCH d.deliveryGroup g
         JOIN FETCH g.slot s
         WHERE g.deliveryDate = :deliveryDate
+          AND d.deletedAt IS NULL
           AND g.deletedAt IS NULL
           AND s.code = :slotCode
           AND d.status IN :statuses
@@ -167,6 +179,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
         JOIN FETCH d.deliveryGroup g
         JOIN FETCH g.slot
         WHERE g.deliveryDate = :deliveryDate
+          AND d.deletedAt IS NULL
           AND g.deletedAt IS NULL
           AND d.createdAt > :cutoff
         ORDER BY d.id ASC
@@ -174,5 +187,21 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
     List<Delivery> findLateOrdersForNotification(
         @Param("deliveryDate") LocalDate deliveryDate
         , @Param("cutoff") LocalDateTime cutoff
+    );
+
+    @Query("""
+        SELECT d
+        FROM Delivery d
+        JOIN FETCH d.deliveryGroup g
+        JOIN FETCH g.slot s
+        WHERE d.customerId = :customerId
+          AND d.deletedAt IS NULL
+          AND g.deliveryDate = :deliveryDate
+          AND g.deletedAt IS NULL
+        ORDER BY s.startTime ASC, d.id ASC
+    """)
+    List<Delivery> findAllForCurrentState(
+        @Param("customerId") Long customerId
+        , @Param("deliveryDate") LocalDate deliveryDate
     );
 }
