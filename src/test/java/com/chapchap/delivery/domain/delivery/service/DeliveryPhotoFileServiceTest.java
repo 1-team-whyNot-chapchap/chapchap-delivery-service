@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.chapchap.delivery.global.config.DeliveryPhotoStorageProperties;
+import com.chapchap.delivery.global.config.MinioProperties;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryPhotoInfoException;
 import com.chapchap.delivery.global.storage.DeliveryPhotoStorage;
 import java.io.InputStream;
@@ -42,7 +43,8 @@ class DeliveryPhotoFileServiceTest {
             , photo
         );
 
-        assertThat(stored.storageKey()).startsWith("delivery-proof/delivery-public-id/");
+        assertThat(stored.storageKey())
+            .startsWith("delivery/completion-photos/delivery-public-id/");
         assertThat(stored.originalFilename()).isEqualTo("proof.jpg");
         assertThat(stored.contentType()).isEqualTo("image/jpeg");
         assertThat(stored.fileSize()).isEqualTo(3L);
@@ -135,11 +137,15 @@ class DeliveryPhotoFileServiceTest {
         return new DeliveryPhotoFileService(
             storage
             , new DeliveryPhotoStorageProperties(
+                java.time.Duration.ofMinutes(10)
+                , maxFileSize
+            )
+            , new MinioProperties(
                 "http://localhost:9000"
+                , "msa4-team1"
                 , "access"
                 , "secret"
-                , java.time.Duration.ofMinutes(5)
-                , maxFileSize
+                , "delivery/completion-photos"
                 , allowedContentTypes
             )
         );
