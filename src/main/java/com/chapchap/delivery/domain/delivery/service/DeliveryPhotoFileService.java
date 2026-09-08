@@ -1,6 +1,7 @@
 package com.chapchap.delivery.domain.delivery.service;
 
 import com.chapchap.delivery.global.config.DeliveryPhotoStorageProperties;
+import com.chapchap.delivery.global.config.MinioProperties;
 import com.chapchap.delivery.global.exception.TechnicalException;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryPhotoInfoException;
 import com.chapchap.delivery.global.storage.DeliveryPhotoStorage;
@@ -15,17 +16,18 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class DeliveryPhotoFileService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-    static final String DELIVERY_PHOTO_OBJECT_PATH = "delivery-proof/";
-
     private final DeliveryPhotoStorage storage;
     private final DeliveryPhotoStorageProperties properties;
+    private final MinioProperties minioProperties;
 
     public DeliveryPhotoFileService(
         DeliveryPhotoStorage storage
         , DeliveryPhotoStorageProperties properties
+        , MinioProperties minioProperties
     ) {
         this.storage = storage;
         this.properties = properties;
+        this.minioProperties = minioProperties;
     }
 
     public StoredPhoto store(
@@ -36,7 +38,9 @@ public class DeliveryPhotoFileService {
         validate(photo);
 
         String contentType = photo.getContentType();
-        String storageKey = DELIVERY_PHOTO_OBJECT_PATH + deliveryPublicId + "/" + UUID.randomUUID();
+        String storageKey = minioProperties.resolveImageObjectKey(
+            deliveryPublicId + "/" + UUID.randomUUID()
+        );
         LocalDateTime uploadedAt = LocalDateTime.now(KST);
 
         try (InputStream inputStream = photo.getInputStream()) {
@@ -72,7 +76,7 @@ public class DeliveryPhotoFileService {
         String contentType = photo.getContentType();
         if (
             contentType == null
-                || !properties.allowedContentTypes().contains(contentType)
+                || !minioProperties.allowImageExtensions().contains(contentType)
                 || photo.getSize() <= 0
                 || photo.getSize() > properties.maxFileSizeBytes()
         ) {

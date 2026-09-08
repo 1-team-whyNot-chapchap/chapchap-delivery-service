@@ -1,6 +1,6 @@
 package com.chapchap.delivery.global.storage;
 
-import com.chapchap.delivery.global.config.DeliveryPhotoStorageProperties;
+import com.chapchap.delivery.global.config.MinioProperties;
 import com.chapchap.delivery.global.exception.TechnicalException;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
@@ -13,16 +13,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
-    static final String BUCKET_NAME = "msa4-team1";
-
-    private final DeliveryPhotoStorageProperties properties;
+    private final MinioProperties properties;
     private final MinioClient client;
 
-    public MinioDeliveryPhotoStorage(DeliveryPhotoStorageProperties properties) {
+    public MinioDeliveryPhotoStorage(MinioProperties properties) {
         this.properties = properties;
         this.client = MinioClient.builder()
-            .endpoint(properties.endpoint())
-            .credentials(properties.accessKey(), properties.secretKey())
+            .endpoint(properties.minioEndpoint())
+            .credentials(properties.minioAccessKey(), properties.minioSecretKey())
             .build();
     }
 
@@ -36,7 +34,7 @@ public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
         try {
             client.putObject(
                 PutObjectArgs.builder()
-                    .bucket(BUCKET_NAME)
+                    .bucket(properties.minioBucket())
                     .object(objectKey)
                     .stream(inputStream, fileSize, null)
                     .contentType(contentType)
@@ -53,7 +51,7 @@ public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
             return client.getPresignedObjectUrl(
                 GetPresignedObjectUrlArgs.builder()
                     .method(Http.Method.GET)
-                    .bucket(BUCKET_NAME)
+                    .bucket(properties.minioBucket())
                     .object(objectKey)
                     .expiry(Math.toIntExact(validity.toSeconds()))
                     .build()
@@ -68,7 +66,7 @@ public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
         try {
             client.removeObject(
                 RemoveObjectArgs.builder()
-                    .bucket(BUCKET_NAME)
+                    .bucket(properties.minioBucket())
                     .object(objectKey)
                     .build()
             );

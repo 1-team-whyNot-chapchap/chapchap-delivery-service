@@ -25,7 +25,6 @@ import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException
 import com.chapchap.delivery.global.storage.DeliveryPhotoStorage;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,12 +53,8 @@ class DeliveryPhotoAccessServiceTest {
             , photoRepository
             , storage
             , new DeliveryPhotoStorageProperties(
-                "http://localhost:9000"
-                , "access"
-                , "secret"
-                , Duration.ofMinutes(5)
+                Duration.ofMinutes(10)
                 , 10_485_760L
-                , Set.of("image/jpeg")
             )
         );
     }
@@ -79,7 +74,7 @@ class DeliveryPhotoAccessServiceTest {
         when(deliveryRepository.findByDeliveryPublicId(PUBLIC_ID)).thenReturn(Optional.of(delivery));
         when(completionRepository.findByDeliveryId(1L)).thenReturn(Optional.of(completion));
         when(photoRepository.findByDeliveryCompletionId(2L)).thenReturn(Optional.of(photo));
-        when(storage.createPresignedGetUrl("delivery-proof/key", Duration.ofMinutes(5)))
+        when(storage.createPresignedGetUrl("delivery-proof/key", Duration.ofMinutes(10)))
             .thenReturn("https://minio.example/signed");
 
         var response = service.forCustomer(100L, UserRole.CUSTOMER, PUBLIC_ID);
@@ -138,7 +133,7 @@ class DeliveryPhotoAccessServiceTest {
         when(deliveryRepository.findByDeliveryPublicId(PUBLIC_ID)).thenReturn(Optional.of(delivery));
         when(completionRepository.findByDeliveryId(1L)).thenReturn(Optional.of(completion));
         when(photoRepository.findByDeliveryCompletionId(2L)).thenReturn(Optional.of(photo));
-        when(storage.createPresignedGetUrl("delivery-proof/key", Duration.ofMinutes(5)))
+        when(storage.createPresignedGetUrl("delivery-proof/key", Duration.ofMinutes(10)))
             .thenReturn("https://minio.example/signed");
 
         service.forAdmin(7L, UserRole.ADMIN, PUBLIC_ID);

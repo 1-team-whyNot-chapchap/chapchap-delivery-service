@@ -49,9 +49,24 @@ class KafkaConfigurationContractTest {
         String environment = Files.readString(Path.of(".env.example"));
 
         assertThat(environment)
+            .contains("MINIO_BUCKET=msa4-team1")
+            .contains("MINIO_IMAGE_PATH=delivery/completion-photos")
             .contains("DELIVERY_PHOTO_MAX_FILE_SIZE=10MB")
             .contains("DELIVERY_PHOTO_MAX_REQUEST_SIZE=11MB")
             .contains("DELIVERY_PHOTO_MAX_FILE_SIZE_BYTES=10485760")
-            .contains("DELIVERY_PHOTO_ALLOWED_CONTENT_TYPES=image/jpeg,image/png,image/webp");
+            .contains("DELIVERY_PHOTO_PRESIGNED_GET_EXPIRATION=10m")
+            .doesNotContain("MINIO_DELIVERY_PHOTO_BUCKET")
+            .doesNotContain("DELIVERY_PHOTO_ALLOWED_CONTENT_TYPES");
+
+        String application = Files.readString(Path.of("src/main/resources/application.yaml"));
+        assertThat(application)
+            .contains("minio-bucket: ${MINIO_BUCKET}")
+            .contains("minio-image-path: ${MINIO_IMAGE_PATH}")
+            .contains("allow-image-extensions:")
+            .contains("\"image/jpg\"")
+            .contains("\"image/jpeg\"")
+            .contains("\"image/png\"")
+            .contains("\"image/gif\"")
+            .contains("\"image/webp\"");
     }
 }
