@@ -9,7 +9,6 @@ public record DeliveryPhotoStorageProperties(
     String endpoint
     , String accessKey
     , String secretKey
-    , String bucket
     , Duration presignedGetExpiration
     , long maxFileSizeBytes
     , Set<String> allowedContentTypes
