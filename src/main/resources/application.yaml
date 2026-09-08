@@ -97,6 +97,7 @@ security:
 app:
   internal-api:
     api-key: ${DELIVERY_INTERNAL_API_KEY}
+    customer-ai-api-key: ${DELIVERY_CUSTOMER_AI_API_KEY:}
   storage:
     delivery-photo:
       endpoint: ${MINIO_ENDPOINT}

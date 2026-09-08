@@ -30,7 +30,10 @@ import org.springframework.test.web.servlet.MockMvc;
     CustomAuthenticationEntryPoint.class,
     CustomAccessDeniedHandler.class
 })
-@TestPropertySource(properties = "app.internal-api.api-key=internal-test-key")
+@TestPropertySource(properties = {
+    "app.internal-api.api-key=internal-test-key",
+    "app.internal-api.customer-ai-api-key=customer-ai-test-key"
+})
 class InternalCurrentDeliveryControllerSecurityTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private CurrentDeliveryQueryService queryService;
@@ -57,6 +60,31 @@ class InternalCurrentDeliveryControllerSecurityTest {
             .andExpect(jsonPath("$.code").value("00"))
             .andExpect(jsonPath("$.data.status").value("DELIVERING"))
             .andExpect(jsonPath("$.data.delayStatus").value("NOT_DELAYED"));
+
+        verify(queryService).getCurrent(25L, UserRole.CUSTOMER);
+    }
+
+    @Test
+    @DisplayName("Customer-AI의 전용 서비스 자격과 CUSTOMER subject로 현재 배송을 조회한다")
+    void customerAiCanReadCurrentDelivery() throws Exception {
+        when(queryService.getCurrent(25L, UserRole.CUSTOMER)).thenReturn(
+            new CurrentDeliveryResponse(
+                CurrentDeliveryStatus.READY,
+                CurrentDeliveryDelayStatus.UNKNOWN,
+                null
+            )
+        );
+
+        mockMvc.perform(get("/internal/deliveries/current")
+                .header("X-Internal-Service", "customer-ai")
+                .header("X-Internal-Api-Key", "customer-ai-test-key")
+                .header("X-Internal-Scope", "delivery.status.read")
+                .header("X-User-Id", "25")
+                .header("X-User-Role", "CUSTOMER"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("00"))
+            .andExpect(jsonPath("$.data.status").value("READY"))
+            .andExpect(jsonPath("$.data.delayStatus").value("UNKNOWN"));
 
         verify(queryService).getCurrent(25L, UserRole.CUSTOMER);
     }

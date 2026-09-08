@@ -27,7 +27,9 @@ public class InternalServiceAuthenticationFilter extends OncePerRequestFilter {
     static final String API_KEY_HEADER = "X-Internal-Api-Key";
     static final String SCOPE_HEADER = "X-Internal-Scope";
     static final String CUSTOMER_SERVICE = "customer-service";
+    static final String CUSTOMER_AI = "customer-ai";
     static final String CURRENT_DELIVERY_SCOPE = "delivery.current.read";
+    static final String DELIVERY_STATUS_SCOPE = "delivery.status.read";
 
     private final InternalApiProperties properties;
     private final ObjectMapper objectMapper;
@@ -50,12 +52,12 @@ public class InternalServiceAuthenticationFilter extends OncePerRequestFilter {
         , @NonNull HttpServletResponse response
         , @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        if (!CUSTOMER_SERVICE.equals(request.getHeader(SERVICE_HEADER))
-            || !validApiKey(request.getHeader(API_KEY_HEADER))) {
+        String service = request.getHeader(SERVICE_HEADER);
+        if (!validCredential(service, request.getHeader(API_KEY_HEADER))) {
             writeError(response, ErrorCode.INTERNAL_SERVICE_AUTHENTICATION_FAILED);
             return;
         }
-        if (!CURRENT_DELIVERY_SCOPE.equals(request.getHeader(SCOPE_HEADER))) {
+        if (!validScope(service, request.getHeader(SCOPE_HEADER))) {
             writeError(response, ErrorCode.CURRENT_DELIVERY_ACCESS_FORBIDDEN);
             return;
         }
@@ -83,8 +85,12 @@ public class InternalServiceAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private boolean validApiKey(String supplied) {
-        String expected = properties.apiKey();
+    private boolean validCredential(String service, String supplied) {
+        String expected = switch (service == null ? "" : service) {
+            case CUSTOMER_SERVICE -> properties.apiKey();
+            case CUSTOMER_AI -> properties.customerAiApiKey();
+            default -> null;
+        };
         if (!StringUtils.hasText(expected) || !StringUtils.hasText(supplied)) {
             return false;
         }
@@ -92,6 +98,11 @@ public class InternalServiceAuthenticationFilter extends OncePerRequestFilter {
             expected.getBytes(StandardCharsets.UTF_8)
             , supplied.getBytes(StandardCharsets.UTF_8)
         );
+    }
+
+    private boolean validScope(String service, String supplied) {
+        return (CUSTOMER_SERVICE.equals(service) && CURRENT_DELIVERY_SCOPE.equals(supplied))
+            || (CUSTOMER_AI.equals(service) && DELIVERY_STATUS_SCOPE.equals(supplied));
     }
 
     private Long parseUserId(String value) {
