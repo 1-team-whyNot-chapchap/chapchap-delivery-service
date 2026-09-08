@@ -57,7 +57,6 @@ class DeliveryPhotoAccessServiceTest {
                 "http://localhost:9000"
                 , "access"
                 , "secret"
-                , "delivery-photos"
                 , Duration.ofMinutes(5)
                 , 10_485_760L
                 , Set.of("image/jpeg")

@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
+    static final String BUCKET_NAME = "msa4-team1";
+
     private final DeliveryPhotoStorageProperties properties;
     private final MinioClient client;
 
@@ -34,7 +36,7 @@ public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
         try {
             client.putObject(
                 PutObjectArgs.builder()
-                    .bucket(properties.bucket())
+                    .bucket(BUCKET_NAME)
                     .object(objectKey)
                     .stream(inputStream, fileSize, null)
                     .contentType(contentType)
@@ -51,7 +53,7 @@ public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
             return client.getPresignedObjectUrl(
                 GetPresignedObjectUrlArgs.builder()
                     .method(Http.Method.GET)
-                    .bucket(properties.bucket())
+                    .bucket(BUCKET_NAME)
                     .object(objectKey)
                     .expiry(Math.toIntExact(validity.toSeconds()))
                     .build()
@@ -66,7 +68,7 @@ public class MinioDeliveryPhotoStorage implements DeliveryPhotoStorage {
         try {
             client.removeObject(
                 RemoveObjectArgs.builder()
-                    .bucket(properties.bucket())
+                    .bucket(BUCKET_NAME)
                     .object(objectKey)
                     .build()
             );

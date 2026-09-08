@@ -103,7 +103,6 @@ app:
       endpoint: ${MINIO_ENDPOINT}
       access-key: ${MINIO_ACCESS_KEY}
       secret-key: ${MINIO_SECRET_KEY}
-      bucket: ${MINIO_DELIVERY_PHOTO_BUCKET}
       presigned-get-expiration: ${DELIVERY_PHOTO_PRESIGNED_GET_EXPIRATION}
       max-file-size-bytes: ${DELIVERY_PHOTO_MAX_FILE_SIZE_BYTES}
       allowed-content-types: ${DELIVERY_PHOTO_ALLOWED_CONTENT_TYPES}

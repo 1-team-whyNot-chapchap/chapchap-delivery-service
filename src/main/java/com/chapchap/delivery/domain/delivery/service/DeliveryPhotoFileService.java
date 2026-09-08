@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class DeliveryPhotoFileService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    static final String DELIVERY_PHOTO_OBJECT_PATH = "delivery-proof/";
 
     private final DeliveryPhotoStorage storage;
     private final DeliveryPhotoStorageProperties properties;
@@ -35,7 +36,7 @@ public class DeliveryPhotoFileService {
         validate(photo);
 
         String contentType = photo.getContentType();
-        String storageKey = "delivery-proof/" + deliveryPublicId + "/" + UUID.randomUUID();
+        String storageKey = DELIVERY_PHOTO_OBJECT_PATH + deliveryPublicId + "/" + UUID.randomUUID();
         LocalDateTime uploadedAt = LocalDateTime.now(KST);
 
         try (InputStream inputStream = photo.getInputStream()) {

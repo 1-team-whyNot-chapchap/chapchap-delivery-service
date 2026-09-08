@@ -138,7 +138,6 @@ class DeliveryPhotoFileServiceTest {
                 "http://localhost:9000"
                 , "access"
                 , "secret"
-                , "delivery-photos"
                 , java.time.Duration.ofMinutes(5)
                 , maxFileSize
                 , allowedContentTypes
