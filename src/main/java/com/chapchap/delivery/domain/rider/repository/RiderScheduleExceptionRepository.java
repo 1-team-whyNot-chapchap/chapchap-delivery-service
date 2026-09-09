@@ -3,12 +3,14 @@ package com.chapchap.delivery.domain.rider.repository;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.rider.entity.RiderScheduleException;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.LockModeType;
 
 public interface RiderScheduleExceptionRepository extends JpaRepository<RiderScheduleException, Long> {
     Optional<RiderScheduleException> findByIdAndDeletedAtIsNull(
@@ -31,6 +33,21 @@ public interface RiderScheduleExceptionRepository extends JpaRepository<RiderSch
         Long riderId
         , LocalDate scheduleDate
         , Long slotId
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT rse
+        FROM RiderScheduleException rse
+        WHERE rse.rider.id = :riderId
+          AND rse.scheduleDate = :scheduleDate
+          AND rse.slot.code IN :deliverySlots
+          AND rse.deletedAt IS NULL
+        """)
+    List<RiderScheduleException> findAllByRiderAndDateAndSlotInForUpdate(
+        @Param("riderId") Long riderId
+        , @Param("scheduleDate") LocalDate scheduleDate
+        , @Param("deliverySlots") List<DeliverySlotCode> deliverySlots
     );
 
     @Query("""

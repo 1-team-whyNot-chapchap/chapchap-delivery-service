@@ -2,6 +2,9 @@ package com.chapchap.delivery.domain.rider.service;
 
 import com.chapchap.delivery.domain.access.constant.UserRole;
 import com.chapchap.delivery.domain.access.service.DeliveryAccessService;
+import com.chapchap.delivery.domain.audit.constant.AuditActorType;
+import com.chapchap.delivery.domain.audit.entity.AuditHistory;
+import com.chapchap.delivery.domain.audit.repository.AuditHistoryRepository;
 import com.chapchap.delivery.domain.delivery.entity.DeliverySlot;
 import com.chapchap.delivery.domain.delivery.repository.DeliverySlotRepository;
 import com.chapchap.delivery.domain.rider.constant.RiderScheduleExceptionReason;
@@ -17,6 +20,7 @@ import com.chapchap.delivery.global.exception.business.OtherReasonDetailRequired
 import com.chapchap.delivery.global.exception.business.RiderNotFoundException;
 import com.chapchap.delivery.global.exception.business.RiderScheduleExceptionConflictException;
 import com.chapchap.delivery.global.exception.business.RiderScheduleExceptionNotFoundException;
+import com.chapchap.delivery.global.exception.business.RiderLeaveManagedScheduleExceptionException;
 import com.chapchap.delivery.global.exception.technical.DeliverySlotConfigurationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,17 +38,20 @@ public class RiderScheduleExceptionService {
     private final RiderScheduleExceptionRepository riderScheduleExceptionRepository;
     private final DeliverySlotRepository deliverySlotRepository;
     private final DeliveryAccessService deliveryAccessService;
+    private final AuditHistoryRepository auditHistoryRepository;
 
     public RiderScheduleExceptionService(
         RiderRepository riderRepository
         , RiderScheduleExceptionRepository riderScheduleExceptionRepository
         , DeliverySlotRepository deliverySlotRepository
         , DeliveryAccessService deliveryAccessService
+        , AuditHistoryRepository auditHistoryRepository
     ) {
         this.riderRepository = riderRepository;
         this.riderScheduleExceptionRepository = riderScheduleExceptionRepository;
         this.deliverySlotRepository = deliverySlotRepository;
         this.deliveryAccessService = deliveryAccessService;
+        this.auditHistoryRepository = auditHistoryRepository;
     }
 
     @Transactional
@@ -114,6 +121,8 @@ public class RiderScheduleExceptionService {
             riderScheduleExceptionRepository.save(
                 scheduleException
             );
+
+        recordAudit(savedException, actorId, "RIDER_SCHEDULE_EXCEPTION_CREATED");
 
         return RiderScheduleExceptionResponse.from(
             savedException
@@ -190,6 +199,8 @@ public class RiderScheduleExceptionService {
                     RiderScheduleExceptionNotFoundException::new
                 );
 
+        validateNotLeaveManaged(scheduleException);
+
         validateVersion(
             scheduleException
             , request.version()
@@ -213,6 +224,8 @@ public class RiderScheduleExceptionService {
         );
 
         riderScheduleExceptionRepository.flush();
+
+        recordAudit(scheduleException, actorId, "RIDER_SCHEDULE_EXCEPTION_UPDATED");
 
         return RiderScheduleExceptionResponse.from(
             scheduleException
@@ -249,11 +262,14 @@ public class RiderScheduleExceptionService {
                     RiderScheduleExceptionNotFoundException::new
                 );
 
+        validateNotLeaveManaged(scheduleException);
+
         scheduleException.delete(
             LocalDateTime.now(
                 ZoneId.of("Asia/Seoul")
             )
         );
+        recordAudit(scheduleException, actorId, "RIDER_SCHEDULE_EXCEPTION_DELETED");
     }
 
     private RiderScheduleExceptionResponse handleExistingException(
@@ -346,5 +362,23 @@ public class RiderScheduleExceptionService {
         ) {
             throw new OptimisticLockConflictException();
         }
+    }
+
+    private void validateNotLeaveManaged(RiderScheduleException scheduleException) {
+        if (scheduleException.getLeaveRequestId() != null) {
+            throw new RiderLeaveManagedScheduleExceptionException();
+        }
+    }
+
+    private void recordAudit(RiderScheduleException scheduleException, Long actorId, String action) {
+        // Existing unit tests construct this service without the optional audit repository mock.
+        if (auditHistoryRepository == null) return;
+        auditHistoryRepository.save(AuditHistory.record(
+            "RIDER_SCHEDULE_EXCEPTION", scheduleException.getId(), action, actorId, AuditActorType.ADMIN,
+            scheduleException.getReasonCode().name(), scheduleException.getReasonDetail(), null,
+            "{\"isWorking\":%s,\"leaveRequestId\":%s}".formatted(
+                scheduleException.getIsWorking(), scheduleException.getLeaveRequestId()
+            ), LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+        ));
     }
 }

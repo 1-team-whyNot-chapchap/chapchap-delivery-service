@@ -64,6 +64,9 @@ public class RiderScheduleException {
     @Column(name = "reason_detail", length = 255)
     private String reasonDetail;
 
+    @Column(name = "leave_request_id")
+    private Long leaveRequestId;
+
     @Version
     @Column(nullable = false)
     private Long version;
@@ -91,12 +94,35 @@ public class RiderScheduleException {
         , String reasonDetail
         , Long createdBy
     ) {
+        this(
+            rider
+            , scheduleDate
+            , slot
+            , isWorking
+            , reasonCode
+            , reasonDetail
+            , null
+            , createdBy
+        );
+    }
+
+    public RiderScheduleException(
+        Rider rider
+        , LocalDate scheduleDate
+        , DeliverySlot slot
+        , Boolean isWorking
+        , RiderScheduleExceptionReason reasonCode
+        , String reasonDetail
+        , Long leaveRequestId
+        , Long createdBy
+    ) {
         this.rider = rider;
         this.scheduleDate = scheduleDate;
         this.slot = slot;
         this.isWorking = isWorking;
         this.reasonCode = reasonCode;
         this.reasonDetail = reasonDetail;
+        this.leaveRequestId = leaveRequestId;
         this.createdBy = createdBy;
     }
 

@@ -183,6 +183,46 @@ public enum ErrorCode {
         HttpStatus.CONFLICT
         , "DELIVERY_029"
         , "재발행할 수 없는 이벤트 상태입니다."
+    )
+    , RIDER_LEAVE_REQUEST_NOT_FOUND(
+        HttpStatus.NOT_FOUND
+        , "DELIVERY_039"
+        , "기사 휴무 신청을 찾을 수 없습니다."
+    )
+    , RIDER_LEAVE_REQUEST_DEADLINE_PASSED(
+        HttpStatus.CONFLICT
+        , "DELIVERY_040"
+        , "기사 휴무 신청 마감이 지났습니다."
+    )
+    , RIDER_LEAVE_REVIEW_DEADLINE_PASSED(
+        HttpStatus.CONFLICT
+        , "DELIVERY_041"
+        , "기사 휴무 신청 검토 마감이 지났습니다."
+    )
+    , RIDER_LEAVE_REQUEST_STATE_CONFLICT(
+        HttpStatus.CONFLICT
+        , "DELIVERY_042"
+        , "이미 처리된 기사 휴무 신청입니다."
+    )
+    , RIDER_LEAVE_REQUEST_OVERLAP(
+        HttpStatus.CONFLICT
+        , "DELIVERY_043"
+        , "같은 날짜와 시간대에 겹치는 활성 휴무 신청이 있습니다."
+    )
+    , RIDER_LEAVE_SCHEDULE_CONFLICT(
+        HttpStatus.CONFLICT
+        , "DELIVERY_044"
+        , "기존 확정 근무 예외 일정과 충돌합니다."
+    )
+    , RIDER_LEAVE_REASON_DETAIL_REQUIRED(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_045"
+        , "기타 휴무를 선택하면 상세 사유가 필요합니다."
+    )
+    , RIDER_LEAVE_MANAGED_SCHEDULE_EXCEPTION(
+        HttpStatus.CONFLICT
+        , "DELIVERY_046"
+        , "휴무 승인으로 생성된 일정 예외는 일반 일정 관리로 수정하거나 삭제할 수 없습니다."
     );
 
     private final HttpStatus httpStatus;
