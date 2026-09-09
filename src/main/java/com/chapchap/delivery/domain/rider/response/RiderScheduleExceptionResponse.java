@@ -14,8 +14,16 @@ public record RiderScheduleExceptionResponse(
     , Boolean isWorking
     , RiderScheduleExceptionReason reasonCode
     , String reasonDetail
+    , Long leaveRequestId
     , Long version
 ) {
+    public RiderScheduleExceptionResponse(
+        Long exceptionId, Long riderId, LocalDate scheduleDate, DeliverySlotCode deliverySlot,
+        Boolean isWorking, RiderScheduleExceptionReason reasonCode, String reasonDetail, Long version
+    ) {
+        this(exceptionId, riderId, scheduleDate, deliverySlot, isWorking, reasonCode, reasonDetail, null, version);
+    }
+
     public static RiderScheduleExceptionResponse from(
         RiderScheduleException scheduleException
     ) {
@@ -27,6 +35,7 @@ public record RiderScheduleExceptionResponse(
             , scheduleException.getIsWorking()
             , scheduleException.getReasonCode()
             , scheduleException.getReasonDetail()
+            , scheduleException.getLeaveRequestId()
             , scheduleException.getVersion()
         );
     }
