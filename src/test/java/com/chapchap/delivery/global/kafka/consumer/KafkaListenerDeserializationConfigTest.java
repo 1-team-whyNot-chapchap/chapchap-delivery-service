@@ -1,0 +1,60 @@
+package com.chapchap.delivery.global.kafka.consumer;
+
+import com.chapchap.delivery.global.kafka.event.AuthUserEvent;
+import com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.kafka.annotation.KafkaListener;
+
+import java.lang.reflect.Method;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class KafkaListenerDeserializationConfigTest {
+
+    @Test
+    @DisplayName("Auth Consumer는 AuthUserEvent 타입으로 역직렬화하도록 설정한다")
+    void authUserEventConsumerDeserializationType() throws Exception {
+        Method method =
+            AuthUserEventConsumer.class.getDeclaredMethod(
+                "handleAuthUserEvent"
+                , AuthUserEvent.class
+                , String.class
+            );
+
+        KafkaListener kafkaListener =
+            method.getAnnotation(KafkaListener.class);
+
+        assertThat(kafkaListener).isNotNull();
+        assertThat(kafkaListener.topics()).containsExactly("${kafka.topic.auth-user-events}");
+        assertThat(kafkaListener.groupId()).isEqualTo("${kafka.consumer-group.auth-user-events}");
+        assertThat(kafkaListener.properties())
+            .containsExactly(
+                "spring.json.value.default.type=com.chapchap.delivery.global.kafka.event.AuthUserEvent"
+            );
+    }
+
+    @Test
+    @DisplayName("주문 Consumer는 SubscriptionDeliveryOrderReadyEvent 타입으로 역직렬화하도록 설정한다")
+    void subscriptionDeliveryOrderConsumerDeserializationType() throws Exception {
+        Method method =
+            SubscriptionDeliveryOrderReadyEventConsumer.class.getDeclaredMethod(
+                "handleSubscriptionDeliveryOrderReady"
+                , SubscriptionDeliveryOrderReadyEvent.class
+                , String.class
+            );
+
+        KafkaListener kafkaListener =
+            method.getAnnotation(KafkaListener.class);
+
+        assertThat(kafkaListener).isNotNull();
+        assertThat(kafkaListener.topics())
+            .containsExactly("${kafka.topic.subscription-delivery-orders}");
+        assertThat(kafkaListener.groupId())
+            .isEqualTo("${kafka.consumer-group.subscription-delivery-orders}");
+        assertThat(kafkaListener.properties())
+            .containsExactly(
+                "spring.json.value.default.type=com.chapchap.delivery.global.kafka.event.SubscriptionDeliveryOrderReadyEvent"
+            );
+    }
+}

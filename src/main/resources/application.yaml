@@ -1,0 +1,135 @@
+server:
+  port: ${APP_PORT}
+
+# Spring Boot
+spring:
+  application:
+    name: chapchap-delivery-service
+
+  servlet:
+    multipart:
+      max-file-size: ${DELIVERY_PHOTO_MAX_FILE_SIZE}
+      max-request-size: ${DELIVERY_PHOTO_MAX_REQUEST_SIZE}
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+    open-in-view: false
+
+  flyway:
+    # 애플리케이션 시작 시 Flyway 마이그레이션 실행
+    enabled: true
+
+    # 마이그레이션 SQL 위치
+    locations:
+      - classpath:db/migration/schema
+      - classpath:db/migration/data
+      - classpath:db/migration/dummy
+
+    # 기존 데이터가 존재하는 DB에도 baseline을 생성한 뒤
+    # 이후 마이그레이션을 적용할 수 있도록 설정
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    consumer:
+      enable-auto-commit: false
+
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+
+        spring.json.trusted.packages: com.chapchap.delivery.global.kafka.event
+        spring.json.use.type.headers: false
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+
+      properties:
+        spring.json.add.type.headers: false
+
+    listener:
+      ack-mode: record
+
+# Kafka
+kafka:
+  topic:
+    subscription-delivery-orders: ${KAFKA_TOPIC_SUBSCRIPTION_DELIVERY_ORDER}
+    auth-user-events: ${KAFKA_TOPIC_AUTH_USER}
+
+  consumer-group:
+    subscription-delivery-orders: ${DELIVERY_ORDER_CONSUMER_GROUP}
+    auth-user-events: ${DELIVERY_AUTH_CONSUMER_GROUP}
+
+  retry:
+    interval-ms: ${KAFKA_RETRY_INTERVAL_MS}
+    max-retries: ${KAFKA_MAX_RETRIES}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# SpringDoc OpenAPI
+springdoc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+# Security
+security:
+  personal-data:
+    # Base64 인코딩된 32바이트 AES 키
+    encryption-key: ${PERSONAL_DATA_ENCRYPTION_KEY}
+
+# Application
+app:
+  internal-api:
+    api-key: ${DELIVERY_INTERNAL_API_KEY}
+    customer-ai-api-key: ${DELIVERY_CUSTOMER_AI_API_KEY:}
+  storage:
+    delivery-photo:
+      presigned-get-expiration: ${DELIVERY_PHOTO_PRESIGNED_GET_EXPIRATION}
+      max-file-size-bytes: ${DELIVERY_PHOTO_MAX_FILE_SIZE_BYTES}
+  kafka:
+    topics:
+      auth-user: ${KAFKA_TOPIC_AUTH_USER}
+      delivery-event: ${KAFKA_TOPIC_DELIVERY_EVENT}
+      delivery-refund-event: ${KAFKA_TOPIC_DELIVERY_REFUND_EVENT}
+      operation-notification: ${KAFKA_TOPIC_OPERATION_NOTIFICATION}
+
+# MinIO
+minio:
+  minio-endpoint: ${MINIO_ENDPOINT}
+  minio-bucket: ${MINIO_BUCKET}
+  minio-access-key: ${MINIO_ACCESS_KEY}
+  minio-secret-key: ${MINIO_SECRET_KEY}
+  minio-image-path: ${MINIO_IMAGE_PATH}
+  allow-image-extensions:
+    - "image/jpg"
+    - "image/jpeg"
+    - "image/png"
+    - "image/gif"
+    - "image/webp"

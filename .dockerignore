@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# Gradle
+.gradle
+build
+
+# Environment / secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.jks
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Documentation
+README.md
