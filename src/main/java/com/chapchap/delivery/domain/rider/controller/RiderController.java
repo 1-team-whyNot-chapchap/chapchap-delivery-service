@@ -6,6 +6,7 @@ import static com.chapchap.delivery.global.exception.ErrorCode.OPTIMISTIC_LOCK_C
 import static com.chapchap.delivery.global.exception.ErrorCode.OTHER_REASON_DETAIL_REQUIRED;
 import static com.chapchap.delivery.global.exception.ErrorCode.RESOURCE_NOT_FOUND;
 import static com.chapchap.delivery.global.exception.ErrorCode.RIDER_NOT_FOUND;
+import static com.chapchap.delivery.global.exception.ErrorCode.RIDER_LEAVE_MANAGED_SCHEDULE_EXCEPTION;
 
 import com.chapchap.delivery.domain.rider.request.RiderDeliveryAreaCreateRequest;
 import com.chapchap.delivery.domain.rider.request.RiderDeliveryAreaUpdateRequest;
@@ -178,7 +179,8 @@ public class RiderController {
         INVALID_DELIVERY_INFO,
         DELIVERY_STATE_CONFLICT,
         OTHER_REASON_DETAIL_REQUIRED,
-        OPTIMISTIC_LOCK_CONFLICT
+        OPTIMISTIC_LOCK_CONFLICT,
+        RIDER_LEAVE_MANAGED_SCHEDULE_EXCEPTION
     })
     public ApiResponse<RiderScheduleExceptionResponse> updateScheduleException(
         @PathVariable Long riderId
@@ -201,7 +203,7 @@ public class RiderController {
     @DeleteMapping("/{riderId}/schedule-exceptions/{exceptionId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete Rider Schedule Exception", description = "등록된 도시락 배송 기사 근무 예외 일정 한 건을 삭제합니다.")
-    @ApiErrorCodes({RIDER_NOT_FOUND, RESOURCE_NOT_FOUND, OPTIMISTIC_LOCK_CONFLICT})
+    @ApiErrorCodes({RIDER_NOT_FOUND, RESOURCE_NOT_FOUND, OPTIMISTIC_LOCK_CONFLICT, RIDER_LEAVE_MANAGED_SCHEDULE_EXCEPTION})
     public ApiResponse<Void> deleteScheduleException(
         @PathVariable Long riderId
         , @PathVariable Long exceptionId
