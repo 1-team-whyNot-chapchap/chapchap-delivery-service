@@ -6,6 +6,9 @@ import com.chapchap.delivery.domain.assignment.response.ManualAssignmentsRespons
 import com.chapchap.delivery.domain.assignment.service.AdminAutoAssignmentService;
 import com.chapchap.delivery.domain.assignment.service.AdminDeliveryGroupConfirmationService;
 import com.chapchap.delivery.domain.assignment.service.AdminManualAssignmentService;
+import com.chapchap.delivery.domain.assignment.service.AdminRiderCandidateQueryService;
+import com.chapchap.delivery.domain.assignment.response.AdminRiderCandidateListResponse;
+import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
 import com.chapchap.delivery.domain.delivery.service.AdminDeliveryQueryService;
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryGroupListResponse;
 import com.chapchap.delivery.domain.delivery.constant.DeliveryGroupStatus;
@@ -46,6 +49,7 @@ class AdminDeliveryGroupControllerSecurityTest {
     @MockitoBean private AdminManualAssignmentService adminManualAssignmentService;
     @MockitoBean private AdminDeliveryGroupConfirmationService adminDeliveryGroupConfirmationService;
     @MockitoBean private AdminDeliveryQueryService adminDeliveryQueryService;
+    @MockitoBean private AdminRiderCandidateQueryService adminRiderCandidateQueryService;
 
     @Test
     @DisplayName("관리자는 전체 배송 목록을 조회할 수 있다")
@@ -85,6 +89,37 @@ class AdminDeliveryGroupControllerSecurityTest {
             .andExpect(jsonPath("$.data").value(true));
 
         verify(adminAutoAssignmentService).assign(ACTOR_ID, UserRole.ADMIN, GROUP_ID);
+    }
+
+    @Test
+    void adminCanReadRiderCandidates() throws Exception {
+        when(adminRiderCandidateQueryService.getCandidates(
+            ACTOR_ID, UserRole.ADMIN, GROUP_ID, null
+        )).thenReturn(new AdminRiderCandidateListResponse(
+            GROUP_ID, java.time.LocalDate.of(2026, 9, 12), DeliverySlotCode.LUNCH, List.of()
+        ));
+
+        mockMvc.perform(get("/api/delivery/admin/delivery-groups/{id}/rider-candidates", GROUP_ID)
+                .header("X-User-Id", ACTOR_ID)
+                .header("X-User-Role", UserRole.ADMIN.name()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.deliveryGroupId").value(GROUP_ID))
+            .andExpect(jsonPath("$.data.items").isArray());
+
+        verify(adminRiderCandidateQueryService).getCandidates(
+            ACTOR_ID, UserRole.ADMIN, GROUP_ID, null
+        );
+    }
+
+    @Test
+    void riderCannotReadRiderCandidates() throws Exception {
+        mockMvc.perform(get("/api/delivery/admin/delivery-groups/{id}/rider-candidates", GROUP_ID)
+                .header("X-User-Id", ACTOR_ID)
+                .header("X-User-Role", UserRole.RIDER.name()))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value(ErrorCode.DELIVERY_FORBIDDEN.getCode()));
+
+        verify(adminRiderCandidateQueryService, never()).getCandidates(any(), any(), any(), any());
     }
 
     @Test

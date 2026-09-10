@@ -2,6 +2,7 @@ package com.chapchap.delivery.domain.assignment.controller;
 
 import static com.chapchap.delivery.global.exception.ErrorCode.ASSIGNMENT_CONDITION_NOT_MET;
 import static com.chapchap.delivery.global.exception.ErrorCode.DELIVERY_ASSIGNMENT_STATE_CONFLICT;
+import static com.chapchap.delivery.global.exception.ErrorCode.DELIVERY_ASSIGNMENT_NOT_FOUND;
 import static com.chapchap.delivery.global.exception.ErrorCode.DELIVERY_CAPACITY_EXCEEDED;
 import static com.chapchap.delivery.global.exception.ErrorCode.DELIVERY_GROUP_CONFIRMATION_CONDITION_NOT_MET;
 import static com.chapchap.delivery.global.exception.ErrorCode.DELIVERY_GROUP_NOT_FOUND;
@@ -12,10 +13,12 @@ import static com.chapchap.delivery.global.exception.ErrorCode.RIDER_NOT_FOUND;
 
 import com.chapchap.delivery.domain.assignment.response.DeliveryGroupConfirmationResponse;
 import com.chapchap.delivery.domain.assignment.response.ManualAssignmentsResponse;
+import com.chapchap.delivery.domain.assignment.response.AdminRiderCandidateListResponse;
 import com.chapchap.delivery.domain.assignment.request.AdminManualAssignmentsRequest;
 import com.chapchap.delivery.domain.assignment.service.AdminAutoAssignmentService;
 import com.chapchap.delivery.domain.assignment.service.AdminDeliveryGroupConfirmationService;
 import com.chapchap.delivery.domain.assignment.service.AdminManualAssignmentService;
+import com.chapchap.delivery.domain.assignment.service.AdminRiderCandidateQueryService;
 import com.chapchap.delivery.global.response.ApiResponse;
 import com.chapchap.delivery.global.openapi.ApiErrorCodes;
 import com.chapchap.delivery.global.security.AuthenticatedUser;
@@ -51,6 +54,7 @@ public class AdminDeliveryGroupController {
     private final AdminDeliveryGroupConfirmationService adminDeliveryGroupConfirmationService;
     private final AdminAutoAssignmentService adminAutoAssignmentService;
     private final AdminManualAssignmentService adminManualAssignmentService;
+    private final AdminRiderCandidateQueryService adminRiderCandidateQueryService;
     private final AdminDeliveryQueryService adminDeliveryQueryService;
 
     @GetMapping
@@ -83,6 +87,25 @@ public class AdminDeliveryGroupController {
         return ApiResponse.success(
             adminDeliveryQueryService.getDeliveryGroup(
                 user.userId(), user.role(), deliveryGroupId
+            )
+        );
+    }
+
+    @GetMapping("/{deliveryGroupId}/rider-candidates")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Get Rider Candidates"
+        , description = "배송 그룹의 미배정 배송 또는 지정 배정 건을 담당할 수 있는 기사 후보를 조회합니다."
+    )
+    @ApiErrorCodes({DELIVERY_GROUP_NOT_FOUND, DELIVERY_ASSIGNMENT_NOT_FOUND})
+    public ApiResponse<AdminRiderCandidateListResponse> getRiderCandidates(
+        @AuthenticationPrincipal AuthenticatedUser user
+        , @PathVariable Long deliveryGroupId
+        , @RequestParam(required = false) Long assignmentId
+    ) {
+        return ApiResponse.success(
+            adminRiderCandidateQueryService.getCandidates(
+                user.userId(), user.role(), deliveryGroupId, assignmentId
             )
         );
     }
