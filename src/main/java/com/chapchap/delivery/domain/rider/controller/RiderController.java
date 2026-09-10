@@ -15,6 +15,7 @@ import com.chapchap.delivery.domain.rider.request.RiderScheduleExceptionUpdateRe
 import com.chapchap.delivery.domain.rider.request.RiderUpdateRequest;
 import com.chapchap.delivery.domain.rider.request.RiderWeeklyScheduleCreateRequest;
 import com.chapchap.delivery.domain.rider.response.RiderDeliveryAreaResponse;
+import com.chapchap.delivery.domain.rider.response.RiderDetailResponse;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleExceptionResponse;
 import com.chapchap.delivery.domain.rider.response.RiderWeeklyScheduleResponse;
 import com.chapchap.delivery.domain.rider.service.RiderDeliveryAreaService;
@@ -45,6 +46,24 @@ public class RiderController {
     private final RiderWeeklyScheduleService riderWeeklyScheduleService;
     private final RiderScheduleExceptionService riderScheduleExceptionService;
     private final RiderDeliveryAreaService riderDeliveryAreaService;
+
+    @GetMapping("/{riderId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get Rider Detail", description = "관리자가 기사 배달 활성 상태와 낙관적 잠금 버전을 조회합니다.")
+    @ApiErrorCodes(RIDER_NOT_FOUND)
+    public ApiResponse<RiderDetailResponse> getRiderDetail(
+        @PathVariable Long riderId
+        , @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        RiderDetailResponse response =
+            riderService.getRiderDetail(
+                riderId
+                , authenticatedUser.userId()
+                , authenticatedUser.role()
+            );
+
+        return ApiResponse.success(response);
+    }
 
     @PatchMapping("/{riderId}/delivery-active")
     @PreAuthorize("hasRole('ADMIN')")

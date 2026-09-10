@@ -11,6 +11,7 @@ import com.chapchap.delivery.domain.rider.request.RiderScheduleExceptionUpdateRe
 import com.chapchap.delivery.domain.rider.request.RiderUpdateRequest;
 import com.chapchap.delivery.domain.rider.request.RiderWeeklyScheduleCreateRequest;
 import com.chapchap.delivery.domain.rider.response.RiderDeliveryAreaResponse;
+import com.chapchap.delivery.domain.rider.response.RiderDetailResponse;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleExceptionResponse;
 import com.chapchap.delivery.domain.rider.response.RiderWeeklyScheduleResponse;
 import com.chapchap.delivery.domain.rider.service.RiderDeliveryAreaService;
@@ -18,6 +19,7 @@ import com.chapchap.delivery.domain.rider.service.RiderScheduleExceptionService;
 import com.chapchap.delivery.domain.rider.service.RiderService;
 import com.chapchap.delivery.domain.rider.service.RiderWeeklyScheduleService;
 import com.chapchap.delivery.global.exception.ErrorCode;
+import com.chapchap.delivery.global.exception.business.RiderNotFoundException;
 import com.chapchap.delivery.global.security.CustomAccessDeniedHandler;
 import com.chapchap.delivery.global.security.CustomAuthenticationEntryPoint;
 import com.chapchap.delivery.global.security.SecurityConfig;
@@ -71,6 +73,100 @@ class RiderControllerSecurityTest {
 
     @MockitoBean
     private RiderDeliveryAreaService riderDeliveryAreaService;
+
+    @Test
+    @DisplayName("인증 정보가 없으면 기사 상세를 조회할 수 없다")
+    void getRiderDetailReturnsUnauthorizedWithoutAuthentication() throws Exception {
+        mockMvc.perform(
+                get("/api/delivery/admin/riders/{riderId}", RIDER_ID)
+            )
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value(ErrorCode.AUTHENTICATION_REQUIRED.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.AUTHENTICATION_REQUIRED.getMessage()));
+
+        verify(riderService, never()).getRiderDetail(
+            any()
+            , any()
+            , any()
+        );
+    }
+
+    @Test
+    @DisplayName("RIDER 역할은 관리자 기사 상세 조회 API에 접근할 수 없다")
+    void getRiderDetailReturnsForbiddenForRider() throws Exception {
+        mockMvc.perform(
+                get("/api/delivery/admin/riders/{riderId}", RIDER_ID)
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.RIDER.name())
+            )
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value(ErrorCode.DELIVERY_FORBIDDEN.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.DELIVERY_FORBIDDEN.getMessage()));
+
+        verify(riderService, never()).getRiderDetail(
+            any()
+            , any()
+            , any()
+        );
+    }
+
+    @Test
+    @DisplayName("ADMIN 역할은 기사 상세를 조회할 수 있다")
+    void getRiderDetailReturnsSuccessForAdmin() throws Exception {
+        RiderDetailResponse serviceResponse =
+            new RiderDetailResponse(
+                RIDER_ID
+                , true
+                , 3L
+            );
+
+        when(
+            riderService.getRiderDetail(
+                RIDER_ID
+                , ACTOR_ID
+                , UserRole.ADMIN
+            )
+        ).thenReturn(serviceResponse);
+
+        mockMvc.perform(
+                get("/api/delivery/admin/riders/{riderId}", RIDER_ID)
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.ADMIN.name())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("00"))
+            .andExpect(jsonPath("$.message").value("SUCCESS"))
+            .andExpect(jsonPath("$.data.riderId").value(RIDER_ID))
+            .andExpect(jsonPath("$.data.isDeliveryActive").value(true))
+            .andExpect(jsonPath("$.data.version").value(3L));
+
+        verify(riderService).getRiderDetail(
+            RIDER_ID
+            , ACTOR_ID
+            , UserRole.ADMIN
+        );
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 기사의 상세를 조회하면 RiderNotFound 정책을 반환한다")
+    void getRiderDetailReturnsNotFoundForUnknownRider() throws Exception {
+        when(
+            riderService.getRiderDetail(
+                RIDER_ID
+                , ACTOR_ID
+                , UserRole.ADMIN
+            )
+        ).thenThrow(new RiderNotFoundException());
+
+        mockMvc.perform(
+                get("/api/delivery/admin/riders/{riderId}", RIDER_ID)
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.ADMIN.name())
+            )
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value(ErrorCode.RIDER_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.RIDER_NOT_FOUND.getMessage()));
+    }
 
     @Test
     @DisplayName("인증 정보가 없으면 기사 배달 활성 상태를 변경할 수 없다")
