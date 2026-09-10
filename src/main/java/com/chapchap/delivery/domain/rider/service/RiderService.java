@@ -9,6 +9,7 @@ import com.chapchap.delivery.domain.rider.constant.RiderDeliveryActiveReason;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
 import com.chapchap.delivery.domain.rider.request.RiderUpdateRequest;
+import com.chapchap.delivery.domain.rider.response.RiderDetailResponse;
 import com.chapchap.delivery.global.exception.business.OptimisticLockConflictException;
 import com.chapchap.delivery.global.exception.business.OtherReasonDetailRequiredException;
 import com.chapchap.delivery.global.exception.business.RiderNotFoundException;
@@ -37,6 +38,25 @@ public class RiderService {
     private final AuditHistoryRepository auditHistoryRepository;
 
     private final DeliveryAccessService deliveryAccessService;
+
+    @Transactional(readOnly = true)
+    public RiderDetailResponse getRiderDetail(
+        Long riderId
+        , Long actorId
+        , UserRole actorRole
+    ) {
+        deliveryAccessService.validateAdminAccess(
+            actorId
+            , actorRole
+        );
+
+        Rider rider =
+            riderRepository
+                .findByIdAndDeletedAtIsNull(riderId)
+                .orElseThrow(RiderNotFoundException::new);
+
+        return RiderDetailResponse.from(rider);
+    }
 
     @Transactional
     public void changeDeliveryActive(

@@ -9,6 +9,7 @@ import com.chapchap.delivery.domain.rider.constant.RiderDeliveryActiveReason;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
 import com.chapchap.delivery.domain.rider.request.RiderUpdateRequest;
+import com.chapchap.delivery.domain.rider.response.RiderDetailResponse;
 import com.chapchap.delivery.global.exception.business.OptimisticLockConflictException;
 import com.chapchap.delivery.global.exception.business.OtherReasonDetailRequiredException;
 import com.chapchap.delivery.global.exception.business.RiderNotFoundException;
@@ -49,6 +50,76 @@ class RiderServiceTest {
 
     @InjectMocks
     private RiderService riderService;
+
+    @Test
+    @DisplayName("관리자가 기사 상세에서 배달 활성 상태와 version을 조회한다")
+    void getRiderDetailSuccess() {
+        Rider rider =
+            createRider(
+                true
+                , 3L
+            );
+
+        when(
+            riderRepository.findByIdAndDeletedAtIsNull(
+                RIDER_ID
+            )
+        ).thenReturn(Optional.of(rider));
+
+        RiderDetailResponse response =
+            riderService.getRiderDetail(
+                RIDER_ID
+                , ADMIN_USER_ID
+                , UserRole.ADMIN
+            );
+
+        assertEquals(
+            RIDER_ID
+            , response.riderId()
+        );
+
+        assertTrue(
+            response.isDeliveryActive()
+        );
+
+        assertEquals(
+            3L
+            , response.version()
+        );
+
+        verify(
+            deliveryAccessService
+        ).validateAdminAccess(
+            ADMIN_USER_ID
+            , UserRole.ADMIN
+        );
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 기사의 상세를 조회하면 RiderNotFoundException이 발생한다")
+    void getRiderDetailRiderNotFound() {
+        when(
+            riderRepository.findByIdAndDeletedAtIsNull(
+                RIDER_ID
+            )
+        ).thenReturn(Optional.empty());
+
+        assertThrows(
+            RiderNotFoundException.class
+            , () -> riderService.getRiderDetail(
+                RIDER_ID
+                , ADMIN_USER_ID
+                , UserRole.ADMIN
+            )
+        );
+
+        verify(
+            deliveryAccessService
+        ).validateAdminAccess(
+            ADMIN_USER_ID
+            , UserRole.ADMIN
+        );
+    }
 
     @Test
     @DisplayName("기사 배송업무 상태를 false에서 true로 변경하고 감사 이력을 저장한다")
