@@ -119,6 +119,12 @@ app:
       delivery-event: ${KAFKA_TOPIC_DELIVERY_EVENT}
       delivery-refund-event: ${KAFKA_TOPIC_DELIVERY_REFUND_EVENT}
       operation-notification: ${KAFKA_TOPIC_OPERATION_NOTIFICATION}
+  rider-location:
+    max-accuracy-meters: ${RIDER_LOCATION_MAX_ACCURACY_METERS:50}
+    max-future-skew: ${RIDER_LOCATION_MAX_FUTURE_SKEW:60s}
+    max-position-age: ${RIDER_LOCATION_MAX_POSITION_AGE:90s}
+    sse-heartbeat-interval: ${RIDER_LOCATION_SSE_HEARTBEAT_INTERVAL:15s}
+    sse-timeout: ${RIDER_LOCATION_SSE_TIMEOUT:60m}
 
 # MinIO
 minio:

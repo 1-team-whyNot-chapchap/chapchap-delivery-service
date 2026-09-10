@@ -20,6 +20,7 @@ import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException
 import com.chapchap.delivery.global.exception.business.DeliveryStateConflictException;
 import com.chapchap.delivery.global.exception.business.InvalidDeliveryFailureReasonException;
 import com.chapchap.delivery.global.kafka.producer.DeliveryEventRequestPublisher;
+import com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -43,6 +44,7 @@ public class AdminDeliveryFailureService {
     private final EntityManager entityManager;
     private final DeliveryRefundReasonResolver refundReasonResolver;
     private final DeliveryFailureValidator failureValidator;
+    private final RiderLocationTrackingLifecycle trackingLifecycle;
 
     public AdminDeliveryFailureService(
         DeliveryAccessService accessService
@@ -55,6 +57,7 @@ public class AdminDeliveryFailureService {
         , EntityManager entityManager
         , DeliveryRefundReasonResolver refundReasonResolver
         , DeliveryFailureValidator failureValidator
+        , RiderLocationTrackingLifecycle trackingLifecycle
     ) {
         this.accessService = accessService;
         this.deliveryRepository = deliveryRepository;
@@ -66,6 +69,7 @@ public class AdminDeliveryFailureService {
         this.entityManager = entityManager;
         this.refundReasonResolver = refundReasonResolver;
         this.failureValidator = failureValidator;
+        this.trackingLifecycle = trackingLifecycle;
     }
 
     @Transactional
@@ -115,6 +119,7 @@ public class AdminDeliveryFailureService {
         ));
         executionSupport.recalculateGroup(group, deliveries, failedAt);
         eventPublisher.publishStateChanged("DELIVERY_FAILED", delivery, failedAt);
+        trackingLifecycle.deliveryEnded(delivery);
         eventPublisher.publishRefundConfirmed(
             delivery
             , refundReasonResolver.resolveFailure(request.failureCode())

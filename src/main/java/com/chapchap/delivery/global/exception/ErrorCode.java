@@ -223,6 +223,21 @@ public enum ErrorCode {
         HttpStatus.CONFLICT
         , "DELIVERY_046"
         , "휴무 승인으로 생성된 일정 예외는 일반 일정 관리로 수정하거나 삭제할 수 없습니다."
+    )
+    , INVALID_RIDER_LOCATION(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_047"
+        , "기사 위치 정보가 올바르지 않습니다."
+    )
+    , RIDER_LOCATION_ACCURACY_EXCEEDED(
+        HttpStatus.BAD_REQUEST
+        , "DELIVERY_048"
+        , "허용된 GPS 정확도 범위를 초과했습니다."
+    )
+    , RIDER_LOCATION_NOT_AVAILABLE(
+        HttpStatus.CONFLICT
+        , "DELIVERY_049"
+        , "현재 위치를 공유할 진행 중 배송이 없습니다."
     );
 
     private final HttpStatus httpStatus;

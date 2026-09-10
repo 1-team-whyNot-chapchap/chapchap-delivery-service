@@ -26,6 +26,7 @@ import com.chapchap.delivery.domain.delivery.request.RiderDeliveryCompletionRequ
 import com.chapchap.delivery.domain.delivery.response.RiderDeliveryCompletionResponse;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
+import com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
 import com.chapchap.delivery.global.exception.business.DeliveryHandoffInfoRequiredException;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
@@ -64,6 +65,7 @@ public class RiderDeliveryCompletionService {
     private final DeliveryPhotoFileService photoFileService;
     private final DeliveryDelayService deliveryDelayService;
     private final TransactionTemplate transactionTemplate;
+    private final RiderLocationTrackingLifecycle trackingLifecycle;
 
     public RiderDeliveryCompletionService(
         DeliveryAccessService accessService
@@ -83,6 +85,7 @@ public class RiderDeliveryCompletionService {
         , DeliveryPhotoFileService photoFileService
         , DeliveryDelayService deliveryDelayService
         , TransactionTemplate transactionTemplate
+        , RiderLocationTrackingLifecycle trackingLifecycle
     ) {
         this.accessService = accessService;
         this.deliveryRepository = deliveryRepository;
@@ -101,6 +104,7 @@ public class RiderDeliveryCompletionService {
         this.photoFileService = photoFileService;
         this.deliveryDelayService = deliveryDelayService;
         this.transactionTemplate = transactionTemplate;
+        this.trackingLifecycle = trackingLifecycle;
     }
 
     public RiderDeliveryCompletionResponse complete(
@@ -284,6 +288,7 @@ public class RiderDeliveryCompletionService {
             , delivery
             , completedAt
         );
+        trackingLifecycle.deliveryEnded(delivery);
 
         return new CompletionResult(
             response(delivery, completion, storedPhoto != null)
