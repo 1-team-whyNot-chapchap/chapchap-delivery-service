@@ -11,6 +11,7 @@ import com.chapchap.delivery.domain.rider.request.RiderScheduleExceptionUpdateRe
 import com.chapchap.delivery.domain.rider.request.RiderUpdateRequest;
 import com.chapchap.delivery.domain.rider.request.RiderWeeklyScheduleCreateRequest;
 import com.chapchap.delivery.domain.rider.response.RiderDeliveryAreaResponse;
+import com.chapchap.delivery.domain.rider.response.RiderDetailResponse;
 import com.chapchap.delivery.domain.rider.response.RiderScheduleExceptionResponse;
 import com.chapchap.delivery.domain.rider.response.RiderWeeklyScheduleResponse;
 import com.chapchap.delivery.domain.rider.service.RiderDeliveryAreaService;
@@ -52,6 +53,49 @@ class RiderControllerTest {
 
     @InjectMocks
     private RiderController riderController;
+
+    @Test
+    @DisplayName("관리자가 기사의 배달 활성 상태와 version을 조회한다")
+    void getRiderDetail() {
+        AuthenticatedUser authenticatedUser =
+            createAdminUser();
+
+        RiderDetailResponse serviceResponse =
+            new RiderDetailResponse(
+                RIDER_ID
+                , true
+                , 3L
+            );
+
+        when(
+            riderService.getRiderDetail(
+                RIDER_ID
+                , ACTOR_ID
+                , UserRole.ADMIN
+            )
+        ).thenReturn(serviceResponse);
+
+        ApiResponse<RiderDetailResponse> response =
+            riderController.getRiderDetail(
+                RIDER_ID
+                , authenticatedUser
+            );
+
+        verify(riderService).getRiderDetail(
+            RIDER_ID
+            , ACTOR_ID
+            , UserRole.ADMIN
+        );
+
+        assertThat(response.code())
+            .isEqualTo("00");
+
+        assertThat(response.message())
+            .isEqualTo("SUCCESS");
+
+        assertThat(response.data())
+            .isEqualTo(serviceResponse);
+    }
 
     @Test
     @DisplayName("관리자가 기사의 배달 활성 상태를 변경한다")
