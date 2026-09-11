@@ -28,7 +28,7 @@ public class RiderLocationTrackingEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTrackingEnded(DeliveryTrackingEndedEvent event) {
-        registry.endTracking(event.deliveryPublicId());
+        registry.endTracking(event.deliveryPublicId(), event.status().name());
         assignmentItemRepository.findConfirmedRiderIdsByDeliveryId(
             event.deliveryId(), DeliveryAssignmentStatus.CONFIRMED
         ).forEach(riderId -> {

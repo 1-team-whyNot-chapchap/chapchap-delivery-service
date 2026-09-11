@@ -10,7 +10,6 @@ import com.chapchap.delivery.domain.rider.repository.RiderRepository;
 import com.chapchap.delivery.domain.riderlocation.entity.RiderCurrentLocation;
 import com.chapchap.delivery.domain.riderlocation.event.RiderLocationUpdatedEvent;
 import com.chapchap.delivery.domain.riderlocation.exception.InvalidRiderLocationException;
-import com.chapchap.delivery.domain.riderlocation.exception.RiderLocationAccuracyExceededException;
 import com.chapchap.delivery.domain.riderlocation.exception.RiderLocationNotAvailableException;
 import com.chapchap.delivery.domain.riderlocation.repository.RiderCurrentLocationRepository;
 import com.chapchap.delivery.domain.riderlocation.request.RiderLocationUpdateRequest;
@@ -89,7 +88,7 @@ public class RiderLocationService {
             throw new InvalidRiderLocationException();
         }
         if (request.accuracy().doubleValue() > properties.maxAccuracyMeters()) {
-            throw new RiderLocationAccuracyExceededException();
+            throw new InvalidRiderLocationException();
         }
     }
 }

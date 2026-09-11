@@ -1,4 +1,6 @@
 package com.chapchap.delivery.domain.riderlocation.event;
 
-public record DeliveryTrackingEndedEvent(Long deliveryId, String deliveryPublicId) {
+import com.chapchap.delivery.domain.delivery.constant.DeliveryStatus;
+
+public record DeliveryTrackingEndedEvent(Long deliveryId, String deliveryPublicId, DeliveryStatus status) {
 }

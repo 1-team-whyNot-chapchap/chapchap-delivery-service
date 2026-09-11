@@ -12,6 +12,8 @@ public class RiderLocationTrackingLifecycle {
     private final ApplicationEventPublisher publisher;
 
     public void deliveryEnded(Delivery delivery) {
-        publisher.publishEvent(new DeliveryTrackingEndedEvent(delivery.getId(), delivery.getDeliveryPublicId()));
+        publisher.publishEvent(new DeliveryTrackingEndedEvent(
+            delivery.getId(), delivery.getDeliveryPublicId(), delivery.getStatus()
+        ));
     }
 }

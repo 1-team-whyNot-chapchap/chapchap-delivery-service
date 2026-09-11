@@ -19,7 +19,6 @@ import com.chapchap.delivery.domain.rider.repository.RiderRepository;
 import com.chapchap.delivery.domain.riderlocation.entity.RiderCurrentLocation;
 import com.chapchap.delivery.domain.riderlocation.event.RiderLocationUpdatedEvent;
 import com.chapchap.delivery.domain.riderlocation.exception.InvalidRiderLocationException;
-import com.chapchap.delivery.domain.riderlocation.exception.RiderLocationAccuracyExceededException;
 import com.chapchap.delivery.domain.riderlocation.exception.RiderLocationNotAvailableException;
 import com.chapchap.delivery.domain.riderlocation.repository.RiderCurrentLocationRepository;
 import com.chapchap.delivery.domain.riderlocation.request.RiderLocationUpdateRequest;
@@ -118,7 +117,7 @@ class RiderLocationServiceTest {
         );
 
         assertThatThrownBy(() -> service.update(AUTH_USER_ID, UserRole.RIDER, inaccurate))
-            .isInstanceOf(RiderLocationAccuracyExceededException.class);
+            .isInstanceOf(InvalidRiderLocationException.class);
 
         verify(currentLocationRepository, never()).findByRiderIdForUpdate(any());
     }

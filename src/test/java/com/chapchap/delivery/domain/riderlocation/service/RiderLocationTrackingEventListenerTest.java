@@ -69,9 +69,9 @@ class RiderLocationTrackingEventListenerTest {
             RIDER_ID, DeliveryAssignmentStatus.CONFIRMED, DeliveryStatus.DELIVERING
         )).thenReturn(List.of("delivery-102"));
 
-        listener.onTrackingEnded(new DeliveryTrackingEndedEvent(DELIVERY_ID, "delivery-101"));
+        listener.onTrackingEnded(new DeliveryTrackingEndedEvent(DELIVERY_ID, "delivery-101", DeliveryStatus.DELIVERED));
 
-        verify(registry).endTracking("delivery-101");
+        verify(registry).endTracking("delivery-101", "DELIVERED");
         verify(currentLocationRepository, never()).deleteById(RIDER_ID);
     }
 
@@ -85,9 +85,9 @@ class RiderLocationTrackingEventListenerTest {
             RIDER_ID, DeliveryAssignmentStatus.CONFIRMED, DeliveryStatus.DELIVERING
         )).thenReturn(List.of());
 
-        listener.onTrackingEnded(new DeliveryTrackingEndedEvent(DELIVERY_ID, "delivery-102"));
+        listener.onTrackingEnded(new DeliveryTrackingEndedEvent(DELIVERY_ID, "delivery-102", DeliveryStatus.DELIVERED));
 
-        verify(registry).endTracking("delivery-102");
+        verify(registry).endTracking("delivery-102", "DELIVERED");
         verify(currentLocationRepository).deleteById(RIDER_ID);
     }
 }

@@ -229,14 +229,9 @@ public enum ErrorCode {
         , "DELIVERY_047"
         , "기사 위치 정보가 올바르지 않습니다."
     )
-    , RIDER_LOCATION_ACCURACY_EXCEEDED(
-        HttpStatus.BAD_REQUEST
-        , "DELIVERY_048"
-        , "허용된 GPS 정확도 범위를 초과했습니다."
-    )
     , RIDER_LOCATION_NOT_AVAILABLE(
         HttpStatus.CONFLICT
-        , "DELIVERY_049"
+        , "DELIVERY_048"
         , "현재 위치를 공유할 진행 중 배송이 없습니다."
     );
 
