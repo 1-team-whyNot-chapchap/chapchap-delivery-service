@@ -18,6 +18,7 @@ import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
 import com.chapchap.delivery.domain.riderlocation.entity.RiderCurrentLocation;
 import com.chapchap.delivery.domain.riderlocation.event.RiderLocationUpdatedEvent;
+import com.chapchap.delivery.domain.riderlocation.exception.InvalidRiderLocationException;
 import com.chapchap.delivery.domain.riderlocation.exception.RiderLocationAccuracyExceededException;
 import com.chapchap.delivery.domain.riderlocation.exception.RiderLocationNotAvailableException;
 import com.chapchap.delivery.domain.riderlocation.repository.RiderCurrentLocationRepository;
@@ -118,6 +119,42 @@ class RiderLocationServiceTest {
 
         assertThatThrownBy(() -> service.update(AUTH_USER_ID, UserRole.RIDER, inaccurate))
             .isInstanceOf(RiderLocationAccuracyExceededException.class);
+
+        verify(currentLocationRepository, never()).findByRiderIdForUpdate(any());
+    }
+
+    @Test
+    @DisplayName("동일한 capturedAt 재전송은 좌표를 유지하고 갱신 이벤트를 발행한다")
+    void refreshesReceiptForSameMeasurement() {
+        RiderCurrentLocation stored = new RiderCurrentLocation(
+            RIDER_ID, new BigDecimal("37.5700000"), new BigDecimal("126.9800000"), new BigDecimal("10.00"),
+            NOW.minusSeconds(5).toLocalDateTime(), NOW.minusSeconds(10).toLocalDateTime()
+        );
+        when(currentLocationRepository.findByRiderIdForUpdate(RIDER_ID)).thenReturn(Optional.of(stored));
+
+        var response = service.update(AUTH_USER_ID, UserRole.RIDER, requestAt(NOW.minusSeconds(5)));
+
+        assertThat(response.latitude()).isEqualByComparingTo("37.5700000");
+        assertThat(response.capturedAt()).isEqualTo(NOW.minusSeconds(5));
+        assertThat(response.receivedAt()).isEqualTo(NOW);
+        verify(currentLocationRepository, never()).save(any());
+        verify(publisher).publishEvent(any(RiderLocationUpdatedEvent.class));
+    }
+
+    @Test
+    @DisplayName("60초를 초과한 미래 GPS 측정값은 거절한다")
+    void rejectsTooFarFutureMeasurement() {
+        assertThatThrownBy(() -> service.update(AUTH_USER_ID, UserRole.RIDER, requestAt(NOW.plusSeconds(61))))
+            .isInstanceOf(InvalidRiderLocationException.class);
+
+        verify(currentLocationRepository, never()).findByRiderIdForUpdate(any());
+    }
+
+    @Test
+    @DisplayName("90초보다 오래된 GPS 측정값은 거절한다")
+    void rejectsExpiredMeasurement() {
+        assertThatThrownBy(() -> service.update(AUTH_USER_ID, UserRole.RIDER, requestAt(NOW.minusSeconds(91))))
+            .isInstanceOf(InvalidRiderLocationException.class);
 
         verify(currentLocationRepository, never()).findByRiderIdForUpdate(any());
     }
