@@ -24,6 +24,7 @@ import com.chapchap.delivery.domain.delivery.request.RiderEmergencyDeliveryFailu
 import com.chapchap.delivery.domain.delivery.response.RiderEmergencyDeliveryFailureResponse;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
+import com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
 import com.chapchap.delivery.global.exception.business.DeliveryAssignmentNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
@@ -55,6 +56,7 @@ public class RiderEmergencyDeliveryFailureService {
     private final DeliveryRefundReasonResolver refundReasonResolver;
     private final DeliveryEventRequestPublisher eventPublisher;
     private final EntityManager entityManager;
+    private final RiderLocationTrackingLifecycle trackingLifecycle;
 
     public RiderEmergencyDeliveryFailureService(
         DeliveryAccessService accessService
@@ -69,6 +71,7 @@ public class RiderEmergencyDeliveryFailureService {
         , DeliveryRefundReasonResolver refundReasonResolver
         , DeliveryEventRequestPublisher eventPublisher
         , EntityManager entityManager
+        , RiderLocationTrackingLifecycle trackingLifecycle
     ) {
         this.accessService = accessService;
         this.groupRepository = groupRepository;
@@ -82,6 +85,7 @@ public class RiderEmergencyDeliveryFailureService {
         this.refundReasonResolver = refundReasonResolver;
         this.eventPublisher = eventPublisher;
         this.entityManager = entityManager;
+        this.trackingLifecycle = trackingLifecycle;
     }
 
     @Transactional
@@ -177,6 +181,7 @@ public class RiderEmergencyDeliveryFailureService {
                 )
             );
             eventPublisher.publishStateChanged("DELIVERY_FAILED", delivery, failedAt);
+            trackingLifecycle.deliveryEnded(delivery);
             eventPublisher.publishRefundConfirmed(
                 delivery
                 , refundReasonResolver.resolveFailure(request.failureCode())

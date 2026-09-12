@@ -58,6 +58,7 @@ class RiderEmergencyDeliveryFailureServiceTest {
     @Mock private DeliveryExecutionSupport executionSupport;
     @Mock private DeliveryEventRequestPublisher eventPublisher;
     @Mock private EntityManager entityManager;
+    @Mock private com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle trackingLifecycle;
 
     private RiderEmergencyDeliveryFailureService service;
 
@@ -76,6 +77,7 @@ class RiderEmergencyDeliveryFailureServiceTest {
             , new DeliveryRefundReasonResolver()
             , eventPublisher
             , entityManager
+            , trackingLifecycle
         );
     }
 
