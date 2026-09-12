@@ -78,5 +78,19 @@ jobs:
           fi
 
           git commit -m "Deploy ${IMAGE_NAME}:${GITHUB_RUN_NUMBER}"
-          git pull --rebase origin main
-          git push origin main
+
+          # 다른 서비스가 같은 manifest 브랜치에 동시에 push할 수 있다.
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 5 ]; then
+              echo "Manifest push failed (attempt ${attempt}/5); retrying after rebase."
+              sleep $((attempt * 2 + RANDOM % 3))
+            fi
+          done
+
+          echo "::error::Manifest push failed after 5 attempts."
+          exit 1
