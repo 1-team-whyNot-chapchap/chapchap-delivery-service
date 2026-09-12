@@ -67,7 +67,7 @@ public interface DeliveryAssignmentItemRepository
           AND dai.deletedAt IS NULL
           AND d.deletedAt IS NULL
           AND d.status = :deliveryStatus
-        ORDER BY d.id ASC
+        ORDER BY d.deliveryPublicId ASC
     """)
     List<String> findDeliveringPublicIdsByRiderId(
         @Param("riderId") Long riderId
