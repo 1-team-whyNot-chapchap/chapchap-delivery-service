@@ -20,6 +20,7 @@ import com.chapchap.delivery.domain.delivery.request.RiderDeliveryFailureRequest
 import com.chapchap.delivery.domain.delivery.response.RiderDeliveryFailureResponse;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
+import com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryStateConflictException;
@@ -52,6 +53,7 @@ public class RiderDeliveryFailureService {
     private final EntityManager entityManager;
     private final DeliveryRefundReasonResolver refundReasonResolver;
     private final DeliveryFailureValidator failureValidator;
+    private final RiderLocationTrackingLifecycle trackingLifecycle;
 
     public RiderDeliveryFailureService(
         DeliveryAccessService accessService
@@ -67,6 +69,7 @@ public class RiderDeliveryFailureService {
         , EntityManager entityManager
         , DeliveryRefundReasonResolver refundReasonResolver
         , DeliveryFailureValidator failureValidator
+        , RiderLocationTrackingLifecycle trackingLifecycle
     ) {
         this.accessService = accessService;
         this.deliveryRepository = deliveryRepository;
@@ -81,6 +84,7 @@ public class RiderDeliveryFailureService {
         this.entityManager = entityManager;
         this.refundReasonResolver = refundReasonResolver;
         this.failureValidator = failureValidator;
+        this.trackingLifecycle = trackingLifecycle;
     }
 
     @Transactional
@@ -207,6 +211,7 @@ public class RiderDeliveryFailureService {
             , delivery
             , failedAt
         );
+        trackingLifecycle.deliveryEnded(delivery);
         eventPublisher.publishRefundConfirmed(
             delivery
             , refundReasonResolver.resolveFailure(request.failureCode())

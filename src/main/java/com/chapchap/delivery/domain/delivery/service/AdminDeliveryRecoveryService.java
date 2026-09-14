@@ -35,6 +35,7 @@ import com.chapchap.delivery.domain.delivery.request.RiderDeliveryFailureRequest
 import com.chapchap.delivery.domain.delivery.response.AdminDeliveryRecoveryResponse;
 import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.domain.rider.repository.RiderRepository;
+import com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle;
 import com.chapchap.delivery.global.exception.business.DeliveryHandoffInfoRequiredException;
 import com.chapchap.delivery.global.exception.business.DeliveryNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryStateConflictException;
@@ -78,6 +79,7 @@ public class AdminDeliveryRecoveryService {
     private final EntityManager entityManager;
     private final TransactionTemplate transactionTemplate;
     private final DeliveryPhotoFileService photoFileService;
+    private final RiderLocationTrackingLifecycle trackingLifecycle;
 
     public AdminDeliveryRecoveryService(
         DeliveryAccessService accessService
@@ -100,6 +102,7 @@ public class AdminDeliveryRecoveryService {
         , EntityManager entityManager
         , TransactionTemplate transactionTemplate
         , DeliveryPhotoFileService photoFileService
+        , RiderLocationTrackingLifecycle trackingLifecycle
     ) {
         this.accessService = accessService;
         this.deliveryRepository = deliveryRepository;
@@ -121,6 +124,7 @@ public class AdminDeliveryRecoveryService {
         this.entityManager = entityManager;
         this.transactionTemplate = transactionTemplate;
         this.photoFileService = photoFileService;
+        this.trackingLifecycle = trackingLifecycle;
     }
 
     public AdminDeliveryRecoveryResponse recover(
@@ -299,6 +303,7 @@ public class AdminDeliveryRecoveryService {
             );
         }
         eventPublisher.publishStateChanged("DELIVERY_COMPLETED", delivery, recoveredAt);
+        trackingLifecycle.deliveryEnded(delivery);
     }
 
     private void recoverFailure(
@@ -343,6 +348,7 @@ public class AdminDeliveryRecoveryService {
         );
         saveHistory(delivery, originalStatus, DeliveryStatus.FAILED, adminId, recoveredAt);
         eventPublisher.publishStateChanged("DELIVERY_FAILED", delivery, recoveredAt);
+        trackingLifecycle.deliveryEnded(delivery);
         eventPublisher.publishRefundConfirmed(
             delivery
             , refundReasonResolver.resolveFailure(request.failureCode())

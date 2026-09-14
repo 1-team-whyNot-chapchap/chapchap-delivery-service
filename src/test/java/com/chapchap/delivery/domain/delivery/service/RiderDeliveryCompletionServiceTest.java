@@ -80,6 +80,7 @@ class RiderDeliveryCompletionServiceTest {
     @Mock private DeliveryPhotoFileService photoFileService;
     @Mock private DeliveryDelayService deliveryDelayService;
     @Mock private TransactionTemplate transactionTemplate;
+    @Mock private com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle trackingLifecycle;
 
     private RiderDeliveryCompletionService service;
 
@@ -108,6 +109,7 @@ class RiderDeliveryCompletionServiceTest {
             , photoFileService
             , deliveryDelayService
             , transactionTemplate
+            , trackingLifecycle
         );
     }
 

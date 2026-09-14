@@ -86,6 +86,7 @@ class AdminDeliveryRecoveryServiceTest {
     @Mock private EntityManager entityManager;
     @Mock private TransactionTemplate transactionTemplate;
     @Mock private DeliveryPhotoFileService photoFileService;
+    @Mock private com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle trackingLifecycle;
 
     private AdminDeliveryRecoveryService recoveryService;
     private Delivery delivery;
@@ -113,6 +114,7 @@ class AdminDeliveryRecoveryServiceTest {
             , entityManager
             , transactionTemplate
             , photoFileService
+            , trackingLifecycle
         );
         lenient().when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
             TransactionCallback<?> callback = invocation.getArgument(0);

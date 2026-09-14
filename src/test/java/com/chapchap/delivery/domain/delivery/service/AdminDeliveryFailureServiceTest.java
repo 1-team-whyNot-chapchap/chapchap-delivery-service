@@ -50,6 +50,7 @@ class AdminDeliveryFailureServiceTest {
     @Mock private DeliveryExecutionSupport executionSupport;
     @Mock private DeliveryEventRequestPublisher eventPublisher;
     @Mock private EntityManager entityManager;
+    @Mock private com.chapchap.delivery.domain.riderlocation.service.RiderLocationTrackingLifecycle trackingLifecycle;
 
     private AdminDeliveryFailureService service;
 
@@ -66,6 +67,7 @@ class AdminDeliveryFailureServiceTest {
             , entityManager
             , new DeliveryRefundReasonResolver()
             , new DeliveryFailureValidator()
+            , trackingLifecycle
         );
     }
 
