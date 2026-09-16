@@ -5,6 +5,7 @@ import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentStatus
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentRepository;
 import com.chapchap.delivery.domain.assignment.service.RiderAcknowledgementNotificationService;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
+import com.chapchap.delivery.global.config.DeliveryVerificationProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -22,9 +23,10 @@ public class RiderAcknowledgementNotificationScheduler {
 
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final RiderAcknowledgementNotificationService riderAcknowledgementNotificationService;
+    private final DeliveryVerificationProperties deliveryVerificationProperties;
 
     @Scheduled(
-        cron = "0 0 7 * * *"
+        cron = "${app.scheduler.rider-acknowledgement.lunch-open-cron:0 0 7 * * *}"
         , zone = "Asia/Seoul"
     )
     public void publishLunchAcknowledgementOpened() {
@@ -34,7 +36,7 @@ public class RiderAcknowledgementNotificationScheduler {
     }
 
     @Scheduled(
-        cron = "0 0 8 * * *"
+        cron = "${app.scheduler.rider-acknowledgement.lunch-first-reminder-cron:0 0 8 * * *}"
         , zone = "Asia/Seoul"
     )
     public void publishLunchFirstReminder() {
@@ -45,7 +47,7 @@ public class RiderAcknowledgementNotificationScheduler {
     }
 
     @Scheduled(
-        cron = "0 30 8 * * *"
+        cron = "${app.scheduler.rider-acknowledgement.lunch-final-reminder-cron:0 30 8 * * *}"
         , zone = "Asia/Seoul"
     )
     public void publishLunchFinalReminder() {
@@ -56,7 +58,7 @@ public class RiderAcknowledgementNotificationScheduler {
     }
 
     @Scheduled(
-        cron = "0 0 13 * * *"
+        cron = "${app.scheduler.rider-acknowledgement.dinner-open-cron:0 0 13 * * *}"
         , zone = "Asia/Seoul"
     )
     public void publishDinnerAcknowledgementOpened() {
@@ -66,7 +68,7 @@ public class RiderAcknowledgementNotificationScheduler {
     }
 
     @Scheduled(
-        cron = "0 0 14 * * *"
+        cron = "${app.scheduler.rider-acknowledgement.dinner-first-reminder-cron:0 0 14 * * *}"
         , zone = "Asia/Seoul"
     )
     public void publishDinnerFirstReminder() {
@@ -77,7 +79,7 @@ public class RiderAcknowledgementNotificationScheduler {
     }
 
     @Scheduled(
-        cron = "0 30 14 * * *"
+        cron = "${app.scheduler.rider-acknowledgement.dinner-final-reminder-cron:0 30 14 * * *}"
         , zone = "Asia/Seoul"
     )
     public void publishDinnerFinalReminder() {
@@ -124,6 +126,10 @@ public class RiderAcknowledgementNotificationScheduler {
     ) {
         LocalDate deliveryDate =
             LocalDate.now(KST);
+        deliveryDate = deliveryDate.plusDays(
+            deliveryVerificationProperties
+                .riderAcknowledgementTargetDateOffsetDays()
+        );
 
         return deliveryAssignmentRepository.findIdsForAcknowledgementPending(
             deliveryDate

@@ -5,16 +5,19 @@ import com.chapchap.delivery.domain.assignment.constant.DeliveryAssignmentStatus
 import com.chapchap.delivery.domain.assignment.repository.DeliveryAssignmentRepository;
 import com.chapchap.delivery.domain.assignment.service.RiderAcknowledgementNotificationService;
 import com.chapchap.delivery.domain.delivery.constant.DeliverySlotCode;
+import com.chapchap.delivery.global.config.DeliveryVerificationProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.mockito.Mockito.inOrder;
@@ -22,6 +25,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 class RiderAcknowledgementNotificationSchedulerTest {
@@ -43,7 +47,16 @@ class RiderAcknowledgementNotificationSchedulerTest {
             new RiderAcknowledgementNotificationScheduler(
                 deliveryAssignmentRepository
                 , riderAcknowledgementNotificationService
+                , new DeliveryVerificationProperties(false, 1, 0)
             );
+    }
+
+    @Test
+    void acknowledgementNotificationCronsCanBeOverriddenForDeploymentVerification() throws NoSuchMethodException {
+        assertThat(cronOf("publishLunchAcknowledgementOpened"))
+            .isEqualTo("${app.scheduler.rider-acknowledgement.lunch-open-cron:0 0 7 * * *}");
+        assertThat(cronOf("publishDinnerAcknowledgementOpened"))
+            .isEqualTo("${app.scheduler.rider-acknowledgement.dinner-open-cron:0 0 13 * * *}");
     }
 
     @Test
@@ -98,6 +111,11 @@ class RiderAcknowledgementNotificationSchedulerTest {
                 riderAcknowledgementNotificationService
             )
             .publishOpened(3L);
+    }
+
+    private String cronOf(String methodName) throws NoSuchMethodException {
+        Method method = RiderAcknowledgementNotificationScheduler.class.getMethod(methodName);
+        return method.getAnnotation(Scheduled.class).cron();
     }
 
     @Test
