@@ -148,6 +148,39 @@ class RiderControllerSecurityTest {
     }
 
     @Test
+    @DisplayName("SUPER_ADMIN 역할은 기사 상세를 조회할 수 있다")
+    void getRiderDetailReturnsSuccessForSuperAdmin() throws Exception {
+        RiderDetailResponse serviceResponse =
+            new RiderDetailResponse(
+                RIDER_ID
+                , true
+                , 3L
+            );
+
+        when(
+            riderService.getRiderDetail(
+                RIDER_ID
+                , ACTOR_ID
+                , UserRole.SUPER_ADMIN
+            )
+        ).thenReturn(serviceResponse);
+
+        mockMvc.perform(
+                get("/api/delivery/admin/riders/{riderId}", RIDER_ID)
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.SUPER_ADMIN.name())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("00"));
+
+        verify(riderService).getRiderDetail(
+            RIDER_ID
+            , ACTOR_ID
+            , UserRole.SUPER_ADMIN
+        );
+    }
+
+    @Test
     @DisplayName("존재하지 않는 기사의 상세를 조회하면 RiderNotFound 정책을 반환한다")
     void getRiderDetailReturnsNotFoundForUnknownRider() throws Exception {
         when(
