@@ -27,10 +27,13 @@ public class DeliveryAccessService {
             return;
         }
 
-        DeliveryAccessProfile profile =
-            deliveryAccessProfileRepository.findByAuthUserId(authUserId)
-                .orElseThrow(DeliveryAccessForbiddenException::new);
+        deliveryAccessProfileRepository.findByAuthUserId(authUserId)
+            .ifPresent(this::validateAdminProfile);
+    }
 
+    private void validateAdminProfile(
+        DeliveryAccessProfile profile
+    ) {
         if (
             profile.getLastRole() != UserRole.ADMIN
                 || !Boolean.TRUE.equals(profile.getAccessAllowed())
