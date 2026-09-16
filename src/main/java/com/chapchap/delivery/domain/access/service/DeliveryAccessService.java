@@ -18,8 +18,13 @@ public class DeliveryAccessService {
         Long authUserId
         , UserRole gatewayRole
     ) {
-        if (gatewayRole != UserRole.ADMIN) {
+        if (gatewayRole == null || !gatewayRole.isAdministrator()) {
             throw new DeliveryAccessForbiddenException();
+        }
+
+        // SUPER_ADMIN is always an active administrator in Auth and does not have a delivery projection.
+        if (gatewayRole == UserRole.SUPER_ADMIN) {
+            return;
         }
 
         DeliveryAccessProfile profile =

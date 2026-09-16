@@ -78,7 +78,7 @@ public class SecurityConfig {
                     .requestMatchers(
                         "/api/delivery/admin/**"
                     )
-                    .hasRole("ADMIN")
+                    .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
                     .requestMatchers(
                         "/api/delivery/rider/**"

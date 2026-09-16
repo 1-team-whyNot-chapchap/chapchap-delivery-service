@@ -30,7 +30,7 @@ public class AdminDeliveryOperationController {
     private final AdminDeliveryOperationQueryService queryService;
 
     @GetMapping("/counts")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Operation Counts", description = "배송일과 시간대별 도시락 배송 운영 항목 건수를 유형별로 조회합니다.")
     @ApiErrorCodes
     public ApiResponse<AdminDeliveryOperationCountsResponse> getCounts(
@@ -45,7 +45,7 @@ public class AdminDeliveryOperationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Delivery Operations", description = "운영 유형, 배송일과 시간대 조건으로 관리자가 확인할 도시락 배송 목록을 조회합니다.")
     @ApiErrorCodes
     public ApiResponse<AdminDeliveryOperationListResponse> getOperations(

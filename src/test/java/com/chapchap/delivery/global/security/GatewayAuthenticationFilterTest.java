@@ -81,6 +81,43 @@ class GatewayAuthenticationFilterTest {
     }
 
     @Test
+    @DisplayName("Gateway 사용자 ID와 SUPER_ADMIN 역할이 정상이면 인증 정보를 생성한다")
+    void authenticateSuperAdminSuccess()
+        throws Exception {
+
+        MockHttpServletRequest request =
+            new MockHttpServletRequest();
+
+        request.addHeader(
+            GatewayAuthenticationFilter.USER_ID_HEADER
+            , "9001"
+        );
+
+        request.addHeader(
+            GatewayAuthenticationFilter.USER_ROLE_HEADER
+            , "SUPER_ADMIN"
+        );
+
+        filter.doFilter(
+            request
+            , new MockHttpServletResponse()
+            , new MockFilterChain()
+        );
+
+        Authentication authentication =
+            SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        assertThat(authentication)
+            .isNotNull();
+
+        assertThat(authentication.getAuthorities())
+            .extracting("authority")
+            .containsExactly("ROLE_SUPER_ADMIN");
+    }
+
+    @Test
     @DisplayName("인증 헤더가 없으면 인증 정보를 생성하지 않는다")
     void noAuthenticationHeaders() throws Exception {
         MockHttpServletRequest request =

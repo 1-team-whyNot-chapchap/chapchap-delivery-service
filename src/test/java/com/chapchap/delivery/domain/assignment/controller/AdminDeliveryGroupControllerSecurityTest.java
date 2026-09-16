@@ -68,6 +68,22 @@ class AdminDeliveryGroupControllerSecurityTest {
     }
 
     @Test
+    @DisplayName("최고 관리자는 전체 배송 목록을 조회할 수 있다")
+    void superAdminCanReadDeliveryGroups() throws Exception {
+        when(adminDeliveryQueryService.getDeliveryGroups(
+            eq(ACTOR_ID), eq(UserRole.SUPER_ADMIN), any(), any(), any(), any()
+        )).thenReturn(new AdminDeliveryGroupListResponse(List.of(), 0, 20, 0, 0, false));
+
+        mockMvc.perform(
+                get("/api/delivery/admin/delivery-groups")
+                    .header("X-User-Id", ACTOR_ID)
+                    .header("X-User-Role", UserRole.SUPER_ADMIN.name())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.items").isArray());
+    }
+
+    @Test
     void rejectsUnauthenticatedManualAssignment() throws Exception {
         mockMvc.perform(post("/api/delivery/admin/delivery-groups/{id}/manual-assignments", GROUP_ID)
                 .contentType(MediaType.APPLICATION_JSON)
