@@ -109,6 +109,22 @@ app:
   internal-api:
     api-key: ${DELIVERY_INTERNAL_API_KEY}
     customer-ai-api-key: ${DELIVERY_CUSTOMER_AI_API_KEY:}
+  operations:
+    delivery-verification:
+      bypass-acknowledgement-window: ${DELIVERY_VERIFICATION_BYPASS_ACKNOWLEDGEMENT_WINDOW:false}
+      auto-assignment-target-date-offset-days: ${DELIVERY_VERIFICATION_AUTO_ASSIGNMENT_TARGET_DATE_OFFSET_DAYS:1}
+      rider-acknowledgement-target-date-offset-days: ${DELIVERY_VERIFICATION_RIDER_ACK_TARGET_DATE_OFFSET_DAYS:0}
+  scheduler:
+    auto-assignment:
+      interval-cron: ${DELIVERY_AUTO_ASSIGNMENT_INTERVAL_CRON:0 10,20,30,40,50 16 * * *}
+      final-cron: ${DELIVERY_AUTO_ASSIGNMENT_FINAL_CRON:0 0 17 * * *}
+    rider-acknowledgement:
+      lunch-open-cron: ${DELIVERY_ACK_LUNCH_OPEN_CRON:0 0 7 * * *}
+      lunch-first-reminder-cron: ${DELIVERY_ACK_LUNCH_FIRST_REMINDER_CRON:0 0 8 * * *}
+      lunch-final-reminder-cron: ${DELIVERY_ACK_LUNCH_FINAL_REMINDER_CRON:0 30 8 * * *}
+      dinner-open-cron: ${DELIVERY_ACK_DINNER_OPEN_CRON:0 0 13 * * *}
+      dinner-first-reminder-cron: ${DELIVERY_ACK_DINNER_FIRST_REMINDER_CRON:0 0 14 * * *}
+      dinner-final-reminder-cron: ${DELIVERY_ACK_DINNER_FINAL_REMINDER_CRON:0 30 14 * * *}
   storage:
     delivery-photo:
       presigned-get-expiration: ${DELIVERY_PHOTO_PRESIGNED_GET_EXPIRATION}

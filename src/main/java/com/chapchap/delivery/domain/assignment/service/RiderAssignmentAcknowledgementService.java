@@ -11,6 +11,7 @@ import com.chapchap.delivery.domain.delivery.entity.DeliveryGroup;
 import com.chapchap.delivery.domain.delivery.entity.DeliveryGroupStatusHistory;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupRepository;
 import com.chapchap.delivery.domain.delivery.repository.DeliveryGroupStatusHistoryRepository;
+import com.chapchap.delivery.global.config.DeliveryVerificationProperties;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
 import com.chapchap.delivery.global.exception.business.DeliveryAssignmentNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryAssignmentStateConflictException;
@@ -33,6 +34,7 @@ public class RiderAssignmentAcknowledgementService {
     private final DeliveryGroupStatusHistoryRepository deliveryGroupStatusHistoryRepository;
     private final DeliveryAccessService deliveryAccessService;
     private final EntityManager entityManager;
+    private final DeliveryVerificationProperties deliveryVerificationProperties;
 
     public RiderAssignmentAcknowledgementService(
         DeliveryAssignmentRepository deliveryAssignmentRepository
@@ -40,12 +42,14 @@ public class RiderAssignmentAcknowledgementService {
         , DeliveryGroupStatusHistoryRepository deliveryGroupStatusHistoryRepository
         , DeliveryAccessService deliveryAccessService
         , EntityManager entityManager
+        , DeliveryVerificationProperties deliveryVerificationProperties
     ) {
         this.deliveryAssignmentRepository = deliveryAssignmentRepository;
         this.deliveryGroupRepository = deliveryGroupRepository;
         this.deliveryGroupStatusHistoryRepository = deliveryGroupStatusHistoryRepository;
         this.deliveryAccessService = deliveryAccessService;
         this.entityManager = entityManager;
+        this.deliveryVerificationProperties = deliveryVerificationProperties;
     }
 
     @Transactional
@@ -148,6 +152,10 @@ public class RiderAssignmentAcknowledgementService {
         DeliveryGroup deliveryGroup
         , LocalDateTime now
     ) {
+        if (deliveryVerificationProperties.bypassAcknowledgementWindow()) {
+            return;
+        }
+
         if (!deliveryGroup.getDeliveryDate().equals(now.toLocalDate())) {
             throw new DeliveryAssignmentStateConflictException();
         }

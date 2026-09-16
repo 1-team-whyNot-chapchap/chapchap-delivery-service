@@ -16,6 +16,7 @@ import com.chapchap.delivery.domain.rider.entity.Rider;
 import com.chapchap.delivery.global.exception.business.DeliveryAccessForbiddenException;
 import com.chapchap.delivery.global.exception.business.DeliveryAssignmentNotFoundException;
 import com.chapchap.delivery.global.exception.business.DeliveryAssignmentStateConflictException;
+import com.chapchap.delivery.global.config.DeliveryVerificationProperties;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,6 +69,7 @@ class RiderAssignmentAcknowledgementServiceTest {
                 , deliveryGroupStatusHistoryRepository
                 , deliveryAccessService
                 , entityManager
+                , new DeliveryVerificationProperties(false, 1, 0)
             );
     }
 
@@ -554,6 +556,50 @@ class RiderAssignmentAcknowledgementServiceTest {
                 , any()
                 , any()
             );
+    }
+
+    @Test
+    @DisplayName("배포 검증 우회 설정이 켜지면 배송일과 확인 시간을 검사하지 않는다")
+    void acknowledgeBypassesDeliveryDateAndTimeWindowForDeploymentVerification() {
+        Long authUserId = 100L;
+        Long assignmentId = 1L;
+        Long deliveryGroupId = 10L;
+        DeliveryAssignment assignment = org.mockito.Mockito.mock(DeliveryAssignment.class);
+        DeliveryGroup deliveryGroup = org.mockito.Mockito.mock(DeliveryGroup.class);
+        Rider rider = org.mockito.Mockito.mock(Rider.class);
+
+        riderAssignmentAcknowledgementService =
+            new RiderAssignmentAcknowledgementService(
+                deliveryAssignmentRepository
+                , deliveryGroupRepository
+                , deliveryGroupStatusHistoryRepository
+                , deliveryAccessService
+                , entityManager
+                , new DeliveryVerificationProperties(true, 1, 0)
+            );
+
+        when(deliveryAccessService.isRiderAccessAllowed(authUserId)).thenReturn(true);
+        when(deliveryAssignmentRepository.findMineById(assignmentId, authUserId))
+            .thenReturn(Optional.of(assignment));
+        when(assignment.getDeliveryGroup()).thenReturn(deliveryGroup);
+        when(deliveryGroup.getId()).thenReturn(deliveryGroupId);
+        when(deliveryGroupRepository.findByIdForUpdate(deliveryGroupId))
+            .thenReturn(Optional.of(deliveryGroup));
+        when(assignment.getRider()).thenReturn(rider);
+        when(rider.getIsDeliveryActive()).thenReturn(true);
+        when(assignment.isAcknowledged()).thenReturn(false);
+        when(assignment.isAssigned()).thenReturn(true);
+        when(deliveryAssignmentRepository.acknowledgeIfAssigned(
+            any(), any(), any(), any(), any()
+        )).thenReturn(0);
+
+        assertThatThrownBy(
+            () -> riderAssignmentAcknowledgementService.acknowledge(authUserId, assignmentId)
+        ).isInstanceOf(DeliveryAssignmentStateConflictException.class);
+
+        verify(deliveryAssignmentRepository).acknowledgeIfAssigned(
+            any(), any(), any(), any(), any()
+        );
     }
 
     @Test
