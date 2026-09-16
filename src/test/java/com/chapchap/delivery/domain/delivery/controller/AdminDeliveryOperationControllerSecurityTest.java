@@ -50,4 +50,16 @@ class AdminDeliveryOperationControllerSecurityTest {
             .andExpect(jsonPath("$.data.autoAssignmentFinalFailure").value(1))
             .andExpect(jsonPath("$.data.unresolvedDelivery").value(4));
     }
+
+    @Test
+    void superAdminCanReadOperationCounts() throws Exception {
+        when(queryService.getCounts(eq(10L), eq(UserRole.SUPER_ADMIN), any(), any()))
+            .thenReturn(new AdminDeliveryOperationCountsResponse(1, 2, 3, 4, 5));
+
+        mockMvc.perform(get("/api/delivery/admin/delivery-operations/counts")
+                .header("X-User-Id", 10L)
+                .header("X-User-Role", UserRole.SUPER_ADMIN.name()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.autoAssignmentFinalFailure").value(1));
+    }
 }

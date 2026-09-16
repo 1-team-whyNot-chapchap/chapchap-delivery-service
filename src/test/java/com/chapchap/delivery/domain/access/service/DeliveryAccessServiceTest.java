@@ -104,6 +104,22 @@ class DeliveryAccessServiceTest {
     }
 
     @Test
+    @DisplayName("SUPER_ADMIN은 배송 Projection 없이도 관리자 접근을 허용한다")
+    void validateSuperAdminAccessWithoutProfileSuccess() {
+        assertDoesNotThrow(
+            () -> deliveryAccessService.validateAdminAccess(
+                ADMIN_USER_ID
+                , UserRole.SUPER_ADMIN
+            )
+        );
+
+        verify(
+            deliveryAccessProfileRepository
+            , never()
+        ).findByAuthUserId(ADMIN_USER_ID);
+    }
+
+    @Test
     @DisplayName("ADMIN Projection이 접근 차단 상태이면 접근을 거절한다")
     void validateAdminAccessBlockedProfile() {
         DeliveryAccessProfile profile =

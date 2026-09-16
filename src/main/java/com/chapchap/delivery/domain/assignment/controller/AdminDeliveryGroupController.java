@@ -58,7 +58,7 @@ public class AdminDeliveryGroupController {
     private final AdminDeliveryQueryService adminDeliveryQueryService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Delivery Groups", description = "배송일, 시간대, 상태 조건으로 도시락 배송 그룹을 조회합니다.")
     @ApiErrorCodes
     public ApiResponse<AdminDeliveryGroupListResponse> getDeliveryGroups(
@@ -77,7 +77,7 @@ public class AdminDeliveryGroupController {
     }
 
     @GetMapping("/{deliveryGroupId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Delivery Group", description = "도시락 배송 그룹의 기사 배정 현황과 고객별 배송 대상을 상세 조회합니다.")
     @ApiErrorCodes(DELIVERY_GROUP_NOT_FOUND)
     public ApiResponse<AdminDeliveryGroupDetailResponse> getDeliveryGroup(
@@ -92,7 +92,7 @@ public class AdminDeliveryGroupController {
     }
 
     @GetMapping("/{deliveryGroupId}/rider-candidates")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(
         summary = "Get Rider Candidates"
         , description = "배송 그룹의 미배정 배송 또는 지정 배정 건을 담당할 수 있는 기사 후보를 조회합니다."
@@ -111,7 +111,7 @@ public class AdminDeliveryGroupController {
     }
 
     @PostMapping("/{deliveryGroupId}/auto-assignment")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Run Auto Assignment", description = "배송 그룹의 미배정 도시락 배송을 가용 기사에게 자동 배정합니다.")
     @ApiErrorCodes({
         DELIVERY_GROUP_NOT_FOUND,
@@ -134,7 +134,7 @@ public class AdminDeliveryGroupController {
     }
 
     @PostMapping("/{deliveryGroupId}/manual-assignments")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Create Manual Assignments", description = "관리자가 선택한 기사에게 도시락 배송 대상을 수동 배정합니다.")
     @ApiErrorCodes({
         DELIVERY_GROUP_NOT_FOUND,
@@ -165,7 +165,7 @@ public class AdminDeliveryGroupController {
     }
 
     @PostMapping("/{deliveryGroupId}/confirmation")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Confirm Delivery Group", description = "기사 배정 조건을 검증하고 도시락 배송 그룹을 최종 확정합니다.")
     @ApiErrorCodes({
         DELIVERY_GROUP_NOT_FOUND,
