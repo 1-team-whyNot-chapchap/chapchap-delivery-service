@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +51,34 @@ class RiderServiceTest {
 
     @InjectMocks
     private RiderService riderService;
+
+    @Test
+    @DisplayName("관리자가 일정과 지역 관리 대상 라이더 목록을 조회한다")
+    void getRidersSuccess() {
+        Rider rider =
+            createRider(
+                true
+                , 3L
+            );
+
+        when(
+            riderRepository.findAllByDeletedAtIsNullOrderByIdAsc()
+        ).thenReturn(List.of(rider));
+
+        List<RiderDetailResponse> responses =
+            riderService.getRiders(
+                ADMIN_USER_ID
+                , UserRole.ADMIN
+            );
+
+        assertEquals(1, responses.size());
+        assertEquals(RIDER_ID, responses.getFirst().riderId());
+
+        verify(deliveryAccessService).validateAdminAccess(
+            ADMIN_USER_ID
+            , UserRole.ADMIN
+        );
+    }
 
     @Test
     @DisplayName("관리자가 기사 상세에서 배달 활성 상태와 version을 조회한다")

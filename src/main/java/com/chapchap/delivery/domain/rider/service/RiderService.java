@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -38,6 +39,22 @@ public class RiderService {
     private final AuditHistoryRepository auditHistoryRepository;
 
     private final DeliveryAccessService deliveryAccessService;
+
+    @Transactional(readOnly = true)
+    public List<RiderDetailResponse> getRiders(
+        Long actorId
+        , UserRole actorRole
+    ) {
+        deliveryAccessService.validateAdminAccess(
+            actorId
+            , actorRole
+        );
+
+        return riderRepository.findAllByDeletedAtIsNullOrderByIdAsc()
+            .stream()
+            .map(RiderDetailResponse::from)
+            .toList();
+    }
 
     @Transactional(readOnly = true)
     public RiderDetailResponse getRiderDetail(

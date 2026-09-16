@@ -47,8 +47,23 @@ public class RiderController {
     private final RiderScheduleExceptionService riderScheduleExceptionService;
     private final RiderDeliveryAreaService riderDeliveryAreaService;
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Get Riders", description = "관리자가 일정과 담당 지역을 관리할 도시락 배송 기사 목록을 조회합니다.")
+    public ApiResponse<List<RiderDetailResponse>> getRiders(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        List<RiderDetailResponse> responses =
+            riderService.getRiders(
+                authenticatedUser.userId()
+                , authenticatedUser.role()
+            );
+
+        return ApiResponse.success(responses);
+    }
+
     @GetMapping("/{riderId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Rider Detail", description = "관리자가 기사 배달 활성 상태와 낙관적 잠금 버전을 조회합니다.")
     @ApiErrorCodes(RIDER_NOT_FOUND)
     public ApiResponse<RiderDetailResponse> getRiderDetail(
@@ -66,7 +81,7 @@ public class RiderController {
     }
 
     @PatchMapping("/{riderId}/delivery-active")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Update Rider Delivery Availability", description = "기사의 도시락 배달 업무 가능 여부를 활성화하거나 비활성화합니다.")
     @ApiErrorCodes({RIDER_NOT_FOUND, OTHER_REASON_DETAIL_REQUIRED, OPTIMISTIC_LOCK_CONFLICT})
     public ApiResponse<Void> changeDeliveryActive(
@@ -85,7 +100,7 @@ public class RiderController {
     }
 
     @PostMapping("/{riderId}/weekly-schedules")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Create Rider Weekly Schedule", description = "도시락 배송 기사의 반복 주간 근무 시간대를 등록합니다.")
     @ApiErrorCodes({RIDER_NOT_FOUND, INVALID_DELIVERY_INFO})
     public ApiResponse<RiderWeeklyScheduleResponse> createWeeklySchedule(
@@ -105,7 +120,7 @@ public class RiderController {
     }
 
     @GetMapping("/{riderId}/weekly-schedules")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Rider Weekly Schedules", description = "도시락 배송 기사에게 등록된 반복 주간 근무 일정을 조회합니다.")
     @ApiErrorCodes(RIDER_NOT_FOUND)
     public ApiResponse<List<RiderWeeklyScheduleResponse>> getWeeklySchedules(
@@ -123,7 +138,7 @@ public class RiderController {
     }
 
     @DeleteMapping("/{riderId}/weekly-schedules/{scheduleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Delete Rider Weekly Schedule", description = "도시락 배송 기사의 반복 주간 근무 일정 한 건을 삭제합니다.")
     @ApiErrorCodes({RIDER_NOT_FOUND, RESOURCE_NOT_FOUND})
     public ApiResponse<Void> deleteWeeklySchedule(
@@ -142,7 +157,7 @@ public class RiderController {
     }
 
     @PostMapping("/{riderId}/schedule-exceptions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Create Rider Schedule Exception", description = "특정 날짜에 적용할 도시락 배송 기사의 근무 예외 일정을 등록합니다.")
     @ApiErrorCodes({
         RIDER_NOT_FOUND,
@@ -168,7 +183,7 @@ public class RiderController {
     }
 
     @GetMapping("/{riderId}/schedule-exceptions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Rider Schedule Exceptions", description = "조회 기간에 포함된 도시락 배송 기사의 근무 예외 일정을 조회합니다.")
     @ApiErrorCodes(RIDER_NOT_FOUND)
     public ApiResponse<List<RiderScheduleExceptionResponse>> getScheduleExceptions(
@@ -190,7 +205,7 @@ public class RiderController {
     }
 
     @PatchMapping("/{riderId}/schedule-exceptions/{exceptionId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Update Rider Schedule Exception", description = "등록된 도시락 배송 기사 근무 예외 일정의 내용을 수정합니다.")
     @ApiErrorCodes({
         RIDER_NOT_FOUND,
@@ -220,7 +235,7 @@ public class RiderController {
     }
 
     @DeleteMapping("/{riderId}/schedule-exceptions/{exceptionId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Delete Rider Schedule Exception", description = "등록된 도시락 배송 기사 근무 예외 일정 한 건을 삭제합니다.")
     @ApiErrorCodes({RIDER_NOT_FOUND, RESOURCE_NOT_FOUND, OPTIMISTIC_LOCK_CONFLICT, RIDER_LEAVE_MANAGED_SCHEDULE_EXCEPTION})
     public ApiResponse<Void> deleteScheduleException(
@@ -239,7 +254,7 @@ public class RiderController {
     }
 
     @PostMapping("/{riderId}/delivery-areas")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Create Rider Delivery Area", description = "기사에게 도시락 배송을 담당할 지역을 등록합니다.")
     @ApiErrorCodes({RIDER_NOT_FOUND, INVALID_DELIVERY_INFO, DELIVERY_STATE_CONFLICT})
     public ApiResponse<RiderDeliveryAreaResponse> createDeliveryArea(
@@ -259,7 +274,7 @@ public class RiderController {
     }
 
     @GetMapping("/{riderId}/delivery-areas")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Rider Delivery Areas", description = "기사에게 등록된 도시락 배송 담당 지역을 조회합니다.")
     @ApiErrorCodes(RIDER_NOT_FOUND)
     public ApiResponse<List<RiderDeliveryAreaResponse>> getDeliveryAreas(
@@ -277,7 +292,7 @@ public class RiderController {
     }
 
     @PatchMapping("/{riderId}/delivery-areas/{riderAreaId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Update Rider Delivery Area", description = "기사의 도시락 배송 담당 지역 활성 상태 등 관리 정보를 수정합니다.")
     @ApiErrorCodes({RIDER_NOT_FOUND, RESOURCE_NOT_FOUND, INVALID_DELIVERY_INFO, DELIVERY_STATE_CONFLICT})
     public ApiResponse<RiderDeliveryAreaResponse> updateDeliveryArea(

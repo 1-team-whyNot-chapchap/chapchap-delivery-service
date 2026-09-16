@@ -55,6 +55,40 @@ class RiderControllerTest {
     private RiderController riderController;
 
     @Test
+    @DisplayName("관리자가 일정과 지역 관리 대상 라이더 목록을 조회한다")
+    void getRiders() {
+        AuthenticatedUser authenticatedUser =
+            createAdminUser();
+
+        List<RiderDetailResponse> serviceResponse =
+            List.of(
+                new RiderDetailResponse(
+                    RIDER_ID
+                    , true
+                    , 3L
+                )
+            );
+
+        when(
+            riderService.getRiders(
+                ACTOR_ID
+                , UserRole.ADMIN
+            )
+        ).thenReturn(serviceResponse);
+
+        ApiResponse<List<RiderDetailResponse>> response =
+            riderController.getRiders(authenticatedUser);
+
+        verify(riderService).getRiders(
+            ACTOR_ID
+            , UserRole.ADMIN
+        );
+
+        assertThat(response.data())
+            .isEqualTo(serviceResponse);
+    }
+
+    @Test
     @DisplayName("관리자가 기사의 배달 활성 상태와 version을 조회한다")
     void getRiderDetail() {
         AuthenticatedUser authenticatedUser =
